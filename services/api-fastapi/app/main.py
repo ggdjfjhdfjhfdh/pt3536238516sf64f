@@ -1,6 +1,14 @@
 
 import os, stripe
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://pt-ldn-61169603-jpga.vercel.app"],  # URL de tu landing
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
 
 stripe.api_key = os.getenv("STRIPE_SECRET")
 PRICE_ID = os.getenv("STRIPE_PRICE_ID")
