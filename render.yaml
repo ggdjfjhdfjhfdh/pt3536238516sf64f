@@ -1,21 +1,24 @@
 services:
 # ──────── API (web) ────────
+# ─────────── API ───────────
 - name: api-fastapi
   type: web
   runtime: docker
   dockerfilePath: services/api-fastapi/Dockerfile
   plan: starter
   envVars:
-    - key: STRIPE_SECRET         ; sync: false
-    - key: STRIPE_PRICE_ID       ; sync: false
-    - key: STRIPE_WEBHOOK_SECRET ; sync: false
-    - key: SUCCESS_URL           ; sync: false
-    - key: CANCEL_URL            ; sync: false
+    - key: STRIPE_SECRET
+      sync: false
+    - key: STRIPE_PRICE_ID
+      sync: false
+    - key: STRIPE_WEBHOOK_SECRET
+      sync: false
+    - key: SUCCESS_URL
+      sync: false
+    - key: CANCEL_URL
+      sync: false
     - key: REDIS_URL
-      # Render generará la URL interna de la BD Redis automáticamente:
-      fromDatabase:
-        name: redis
-        property: connectionString
+      value: redis://redis:6379/0          # URL interna
 
 # ───────── REDIS DB ─────────
 - name: redis
