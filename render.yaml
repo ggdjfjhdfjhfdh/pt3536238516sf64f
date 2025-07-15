@@ -7,6 +7,7 @@ services:
     type: web
     runtime: docker
     dockerfilePath: services/api-fastapi/Dockerfile
+    dockerContext: services/api-fastapi
     plan: starter            # Starter - 512 MB / 0,5 CPU
     envVars:
       - key: STRIPE_SECRET         # los cinco los sigues metiendo a mano
@@ -36,6 +37,7 @@ services:
     type: worker
     runtime: docker
     dockerfilePath: workers/scan-runner/Dockerfile
+    dockerContext: workers/scan-runner
     plan: starter
     envVars:
       - key: REDIS_URL

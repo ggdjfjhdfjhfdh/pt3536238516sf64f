@@ -1,0 +1,37 @@
+# Ignorar todo por defecto
+*
+
+# Permitir explícitamente los archivos y directorios necesarios
+!services/
+!services/api-fastapi/
+!services/api-fastapi/app/
+!services/api-fastapi/app/**
+!services/api-fastapi/requirements.txt
+!services/api-fastapi/Dockerfile
+
+!workers/
+!workers/scan-runner/
+!workers/scan-runner/run_scan.py
+!workers/scan-runner/requirements.txt
+!workers/scan-runner/Dockerfile
+
+# Ignorar archivos específicos
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+**/.Python
+**/build/
+**/dist/
+**/*.egg-info/
+**/.installed.cfg
+**/*.egg
+
+# IDE
+**/.idea/
+**/.vscode/
+**/*.swp
+**/*.swo
+
+# Logs
+**/*.log
