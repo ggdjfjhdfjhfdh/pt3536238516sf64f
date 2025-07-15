@@ -41,8 +41,7 @@ services:
 #  Bases de datos
 # -------------------------------------------------------
 databases:
-  # Redis 7 – Starter (512 MB)
   - name: redis
-    type: redis
+    databaseType: redis      # ← clave correcta
     plan: starter
     ipAllowList: []          # vacío = solo accesible dentro de Render VPC
