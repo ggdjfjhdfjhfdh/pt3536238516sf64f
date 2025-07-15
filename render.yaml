@@ -1,16 +1,15 @@
-# =======================================================
-#  Render Blueprint
-# =======================================================
+# render.yaml
+# ===============================================
 
 services:
-  # ─────────── API (web) ───────────
+  # ─────────── API FastAPI (web) ───────────
   - name: api-fastapi
     type: web
     runtime: docker
     dockerfilePath: services/api-fastapi/Dockerfile
-    plan: starter
+    plan: starter            # Starter - 512 MB / 0,5 CPU
     envVars:
-      - key: STRIPE_SECRET         # secrets externos
+      - key: STRIPE_SECRET         # los cinco los sigues metiendo a mano
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
@@ -20,12 +19,19 @@ services:
         sync: false
       - key: CANCEL_URL
         sync: false
+      # Redis interno (DNS = redis)
       - key: REDIS_URL
-        fromDatabase:
-          name: redis
-          property: connectionString
+        value: redis://redis:6379/0
 
-  # ─────────── WORKER RQ ───────────
+  # ─────────── Redis (Key-Value) ───────────
+  - name: redis
+    type: keyvalue            # «redis» es alias obsoleto, usa keyvalue
+    plan: starter
+    ipAllowList:              # Render exige al menos UNA entrada
+      - source: 0.0.0.0/0     # déjalo abierto; sólo tu VPC interna podrá verlo
+        description: internal only
+
+  # ─────────── Worker RQ (background) ──────
   - name: scan-runner
     type: worker
     runtime: docker
@@ -33,15 +39,4 @@ services:
     plan: starter
     envVars:
       - key: REDIS_URL
-        fromDatabase:
-          name: redis
-          property: connectionString
-
-# -------------------------------------------------------
-#  Bases de datos
-# -------------------------------------------------------
-databases:
-  - name: redis
-    databaseType: redis      # tipo correcto
-    plan: starter
-    ipAllowList: []          # lista vacía = solo interno
+        value: redis://redis:6379/0
