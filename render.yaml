@@ -3,23 +3,28 @@
 # =======================================================
 
 services:
-  # ─────────── API (web) ───────────
+ # ─────────── API (web) ───────────
   - name: api-fastapi
     type: web
     runtime: docker
     dockerfilePath: services/api-fastapi/Dockerfile
     plan: starter
     envVars:
-      - key: STRIPE_SECRET         ; sync: false
-      - key: STRIPE_PRICE_ID       ; sync: false
-      - key: STRIPE_WEBHOOK_SECRET ; sync: false
-      - key: SUCCESS_URL           ; sync: false
-      - key: CANCEL_URL            ; sync: false
+      - key: STRIPE_SECRET         # ← márcalos como externos
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SUCCESS_URL
+        sync: false
+      - key: CANCEL_URL
+        sync: false
+      # URL interna de Redis
       - key: REDIS_URL
         fromDatabase:
           name: redis
           property: connectionString
-
   # ─────────── WORKER (RQ) ───────────
   - name: scan-runner
     type: worker
