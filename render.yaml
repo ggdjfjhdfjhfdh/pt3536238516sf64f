@@ -45,5 +45,6 @@ services:
 databases:
   - name: redis
     type: redis          # <- clave correcta
+    databaseType: redis 
     plan: starter
     ipAllowList: []      # lista vacía = solo accesible dentro de Render
