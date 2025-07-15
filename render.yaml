@@ -1,31 +1,32 @@
 services:
+# ─────────── API ───────────
 - name: api-fastapi
   type: web
   runtime: docker
   dockerfilePath: services/api-fastapi/Dockerfile
   plan: starter
   envVars:
-    - key: STRIPE_SECRET           ; sync: false
-    - key: STRIPE_PRICE_ID         ; sync: false
-    - key: STRIPE_WEBHOOK_SECRET   ; sync: false
-    - key: SUCCESS_URL             ; sync: false
-    - key: CANCEL_URL              ; sync: false
-    - key: REDIS_URL               ; fromService: {name: redis, property: uri}
+    - key: STRIPE_SECRET         ; sync: false
+    - key: STRIPE_PRICE_ID       ; sync: false
+    - key: STRIPE_WEBHOOK_SECRET ; sync: false
+    - key: SUCCESS_URL           ; sync: false
+    - key: CANCEL_URL            ; sync: false
+    - key: REDIS_URL
+      value: redis://redis:6379/0      # URL fija y válida
 
+# ─────────── REDIS ──────────
 - name: redis
   type: privateService
   runtime: docker
   image: redis:7
-  plan: starter
-  envVars:
-  - key: REDIS_URL
-    value: redis://redis:6379/0       
+  plan: starter                       # sin envVars; no los necesita
 
+# ────────── WORKER ──────────
 - name: scan-runner
   type: background
   runtime: docker
   dockerfilePath: workers/scan-runner/Dockerfile
   plan: starter
-envVars:
-  - key: REDIS_URL
-    value: redis://redis:6379/0       
+  envVars:
+    - key: REDIS_URL
+      value: redis://redis:6379/0
