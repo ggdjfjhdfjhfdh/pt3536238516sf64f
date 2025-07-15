@@ -1,32 +1,52 @@
-services:
-# ──────── API (web) ────────
-# ─────────── API ───────────
-- name: api-fastapi
-  type: web
-  runtime: docker
-  dockerfilePath: services/api-fastapi/Dockerfile
-  plan: starter
-  envVars:
-    - key: STRIPE_SECRET
-      sync: false
-    - key: STRIPE_PRICE_ID
-      sync: false
-    - key: STRIPE_WEBHOOK_SECRET
-      sync: false
-    - key: SUCCESS_URL
-      sync: false
-    - key: CANCEL_URL
-      sync: false
-    - key: REDIS_URL
-      value: redis://redis:6379/0          # URL interna
-      
-# ─── Bases de datos ───
-databases:
+# =======================================================
+#  Render Blueprint
+# =======================================================
 
-- name: redis
-  type: redis
-  plan: starter
-  ipAllowList: []          # vacío = sólo accesible dentro de Render VP
+services:
+  # ─────────── API (web) ───────────
+  - name: api-fastapi
+    type: web
+    runtime: docker
+    dockerfilePath: services/api-fastapi/Dockerfile
+    plan: starter
+    envVars:
+      - key: STRIPE_SECRET         # ← márcalos como externos
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SUCCESS_URL
+        sync: false
+      - key: CANCEL_URL
+        sync: false
+      # URL interna de Redis
+      - key: REDIS_URL
+        fromDatabase:
+          name: redis
+          property: connectionString
+
+  # ─────────── WORKER (RQ) ───────────
+  - name: scan-runner
+    type: worker
+    runtime: docker
+    dockerfilePath: workers/scan-runner/Dockerfile
+    plan: starter
+    envVars:
+      - key: REDIS_URL
+        fromDatabase:
+          name: redis
+          property: connectionString
+
+# -------------------------------------------------------
+#  Bases de datos
+# -------------------------------------------------------
+databases:
+  # Redis 7 – Starter (512 MB)
+  - name: redis
+    type: redis
+    plan: starter
+    ipAllowList: []          # vacío = sólo accesible desde Render VPC
 
 # ─────────── WORKER RQ ───────────
 - name: scan-runner
