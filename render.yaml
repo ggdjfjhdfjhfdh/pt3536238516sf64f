@@ -2,8 +2,10 @@ services:
 - name: api-fastapi
   type: web
   plan: starter
+  buildCommand: ""
   dockerfilePath: services/api-fastapi/Dockerfile
   buildDirectory: "services/api-fastapi"
+  startCommand: ""
   envVars:
     - key: STRIPE_SECRET;          sync: false
     - key: STRIPE_PRICE_ID;        sync: false
