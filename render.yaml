@@ -10,7 +10,7 @@ services:
     dockerfilePath: services/api-fastapi/Dockerfile
     plan: starter
     envVars:
-      - key: STRIPE_SECRET         # secretos externos
+      - key: STRIPE_SECRET         # secrets externos
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
@@ -20,8 +20,6 @@ services:
         sync: false
       - key: CANCEL_URL
         sync: false
-
-      # URL interna que Render generará para Redis
       - key: REDIS_URL
         fromDatabase:
           name: redis
@@ -44,7 +42,6 @@ services:
 # -------------------------------------------------------
 databases:
   - name: redis
-    type: redis          # <- clave correcta
-    databaseType: redis 
+    databaseType: redis      # tipo correcto
     plan: starter
-    ipAllowList: []      # lista vacía = solo accesible dentro de Render
+    ipAllowList: []          # lista vacía = solo interno
