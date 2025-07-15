@@ -17,11 +17,15 @@ services:
   runtime: docker
   image: redis:7
   plan: starter
+  envVars:
+  - key: REDIS_URL
+    value: redis://redis:6379/0       
 
 - name: scan-runner
   type: background
   runtime: docker
   dockerfilePath: workers/scan-runner/Dockerfile
   plan: starter
-  envVars:
-    - key: REDIS_URL ; fromService: {name: redis, property: uri}
+envVars:
+  - key: REDIS_URL
+    value: redis://redis:6379/0       
