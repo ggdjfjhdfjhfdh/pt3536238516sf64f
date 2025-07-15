@@ -1,37 +1,35 @@
 services:
-# ─────────── API ───────────
+# ──────── API (web) ────────
 - name: api-fastapi
   type: web
   runtime: docker
   dockerfilePath: services/api-fastapi/Dockerfile
   plan: starter
   envVars:
-    - key: STRIPE_SECRET
-      sync: false
-    - key: STRIPE_PRICE_ID
-      sync: false
-    - key: STRIPE_WEBHOOK_SECRET
-      sync: false
-    - key: SUCCESS_URL
-      sync: false
-    - key: CANCEL_URL
-      sync: false
+    - key: STRIPE_SECRET         ; sync: false
+    - key: STRIPE_PRICE_ID       ; sync: false
+    - key: STRIPE_WEBHOOK_SECRET ; sync: false
+    - key: SUCCESS_URL           ; sync: false
+    - key: CANCEL_URL            ; sync: false
     - key: REDIS_URL
-      value: redis://redis:6379/0          # URL interna
+      # Render generará la URL interna de la BD Redis automáticamente:
+      fromDatabase:
+        name: redis
+        property: connectionString
 
-# ─────────── REDIS ──────────
+# ───────── REDIS DB ─────────
 - name: redis
-  type: privateService
-  runtime: docker
-  image: redis:7
-  plan: starter                            # sin envVars
+  type: redis               # <-- Tipo correcto
+  plan: starter             # 512 MB · 0,5 GB
 
-# ────────── WORKER ──────────
+# ──────── WORKER RQ ────────
 - name: scan-runner
-  type: background
+  type: worker              # <-- Tipo correcto en Blueprint
   runtime: docker
   dockerfilePath: workers/scan-runner/Dockerfile
   plan: starter
   envVars:
     - key: REDIS_URL
-      value: redis://redis:6379/0
+      fromDatabase:
+        name: redis
+        property: connectionString
