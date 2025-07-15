@@ -19,15 +19,16 @@ services:
       sync: false
     - key: REDIS_URL
       value: redis://redis:6379/0          # URL interna
-
-# ───────── REDIS DB ─────────
+      
+# ─────────── REDIS (DB) ──────────
 - name: redis
-  type: redis               # <-- Tipo correcto
-  plan: starter             # 512 MB · 0,5 GB
+  type: redis
+  plan: starter
+  ipAllowList: []                # ← requerido (lista vacía = solo interno)
 
-# ──────── WORKER RQ ────────
+# ─────────── WORKER RQ ───────────
 - name: scan-runner
-  type: worker              # <-- Tipo correcto en Blueprint
+  type: worker
   runtime: docker
   dockerfilePath: workers/scan-runner/Dockerfile
   plan: starter
