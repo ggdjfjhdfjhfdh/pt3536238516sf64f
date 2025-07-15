@@ -41,4 +41,4 @@ services:
     plan: starter
     envVars:
       - key: REDIS_URL
-        value: redis://redis:6379/0
+        value: redis://red-d1r7117diees73flo1lg:6379

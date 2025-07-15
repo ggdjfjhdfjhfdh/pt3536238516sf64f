@@ -3,7 +3,7 @@ import redis
 from rq import Queue, Worker
 from reportlab.pdfgen import canvas
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", "redis://red-d1r7117diees73flo1lg:6379")
 q = Queue("scans", connection=redis.from_url(REDIS_URL))
 
 def generate_pdf(domain, email):
