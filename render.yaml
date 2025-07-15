@@ -10,17 +10,11 @@ services:
     dockerfilePath: services/api-fastapi/Dockerfile
     plan: starter
     envVars:
-      - key: STRIPE_SECRET         # ← márcalos como externos
-        sync: false
-      - key: STRIPE_PRICE_ID
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: SUCCESS_URL
-        sync: false
-      - key: CANCEL_URL
-        sync: false
-      # URL interna de Redis
+      - key: STRIPE_SECRET         ; sync: false
+      - key: STRIPE_PRICE_ID       ; sync: false
+      - key: STRIPE_WEBHOOK_SECRET ; sync: false
+      - key: SUCCESS_URL           ; sync: false
+      - key: CANCEL_URL            ; sync: false
       - key: REDIS_URL
         fromDatabase:
           name: redis
@@ -46,16 +40,4 @@ databases:
   - name: redis
     type: redis
     plan: starter
-    ipAllowList: []          # vacío = sólo accesible desde Render VPC
-
-# ─────────── WORKER RQ ───────────
-- name: scan-runner
-  type: worker
-  runtime: docker
-  dockerfilePath: workers/scan-runner/Dockerfile
-  plan: starter
-  envVars:
-    - key: REDIS_URL
-      fromDatabase:
-        name: redis
-        property: connectionString
+    ipAllowList: []          # vacío = solo accesible dentro de Render VPC
