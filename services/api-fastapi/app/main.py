@@ -3,6 +3,8 @@ import os, stripe
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://pt-ldn-61169603-jpga.vercel.app"],  # URL de tu landing
@@ -13,8 +15,6 @@ app.add_middleware(
 stripe.api_key = os.getenv("STRIPE_SECRET")
 PRICE_ID = os.getenv("STRIPE_PRICE_ID")
 WHSEC    = os.getenv("STRIPE_WEBHOOK_SECRET")
-
-app = FastAPI()
 
 @app.post("/stripe/create-checkout")
 async def create_checkout():
