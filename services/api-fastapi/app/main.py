@@ -7,7 +7,7 @@ app = FastAPI()
 # CORS – tu dominio de Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pt-ldn-61169603-jpga.vercel.app"],
+    allow_origins=["https://pt-ldn-61169603-jpga.vercel.app/"],
     allow_methods=["POST"],
     allow_headers=["*"],
 )
@@ -18,7 +18,7 @@ PRICE_ID       = os.getenv("STRIPE_PRICE_ID")
 WHSEC          = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # ---------- Cola Redis / RQ ----------
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", "redis://red-d1r7117diees73flo1lg:6379")
 scan_q    = rq.Queue("scans", connection=redis.from_url(REDIS_URL))
 
 # ---------- Endpoints ----------
