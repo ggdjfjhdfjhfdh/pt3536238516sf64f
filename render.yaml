@@ -4,6 +4,8 @@ services:
   runtime: docker
   dockerfilePath: services/api-fastapi/Dockerfile
   plan: starter
+  buildCommand: ""
+  buildDirectory: "services/api-fastapi"
   envVars:
     - key: STRIPE_SECRET;          sync: false
     - key: STRIPE_PRICE_ID;        sync: false
