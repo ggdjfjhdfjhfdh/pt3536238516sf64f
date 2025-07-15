@@ -6,7 +6,7 @@ services:
   - name: api-fastapi
     type: web
     runtime: docker
-    dockerfilePath: services/api-fastapi/app/Dockerfile
+    dockerfilePath: services/api-fastapi/Dockerfile
     plan: starter            # Starter - 512 MB / 0,5 CPU
     envVars:
       - key: STRIPE_SECRET         # los cinco los sigues metiendo a mano
