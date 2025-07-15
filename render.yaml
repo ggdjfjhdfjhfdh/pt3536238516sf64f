@@ -1,0 +1,12 @@
+services:
+- name: api-fastapi
+  type: web
+  runtime: docker
+  dockerfilePath: services/api-fastapi/Dockerfile
+  plan: starter
+  envVars:
+    - key: STRIPE_SECRET;          sync: false
+    - key: STRIPE_PRICE_ID;        sync: false
+    - key: STRIPE_WEBHOOK_SECRET;  sync: false
+    - key: SUCCESS_URL;            value: https://pt-ldn-61169603-jpga.vercel.app/success.html
+    - key: CANCEL_URL;             value: https://pt-ldn-61169603-jpga.vercel.app/cancel.html
