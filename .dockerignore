@@ -15,6 +15,11 @@
 !workers/scan-runner/requirements.txt
 !workers/scan-runner/Dockerfile
 
+# Permitir archivos en la raíz necesarios para scan-runner
+!run_scan.py
+!requirements.txt
+!Dockerfile.scan-runner
+
 # Ignorar archivos específicos
 **/__pycache__/
 **/*.py[cod]

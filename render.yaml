@@ -36,7 +36,7 @@ services:
   - name: scan-runner
     type: worker
     runtime: docker
-    dockerfilePath: workers/scan-runner/Dockerfile
+    dockerfilePath: Dockerfile.scan-runner
     dockerContext: .
     plan: starter
     envVars:
