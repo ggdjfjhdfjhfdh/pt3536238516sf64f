@@ -20,11 +20,13 @@ services:
     - key: REDIS_URL
       value: redis://redis:6379/0          # URL interna
       
-# ─────────── REDIS (DB) ──────────
+# ─── Bases de datos ───
+databases:
+
 - name: redis
   type: redis
   plan: starter
-  ipAllowList: []                # ← requerido (lista vacía = solo interno)
+  ipAllowList: []          # vacío = sólo accesible dentro de Render VP
 
 # ─────────── WORKER RQ ───────────
 - name: scan-runner
