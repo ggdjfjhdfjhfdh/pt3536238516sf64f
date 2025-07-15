@@ -37,7 +37,7 @@ services:
     type: worker
     runtime: docker
     dockerfilePath: workers/scan-runner/Dockerfile
-    dockerContext: workers/scan-runner
+    dockerContext: .
     plan: starter
     envVars:
       - key: REDIS_URL
