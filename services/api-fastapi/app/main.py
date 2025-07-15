@@ -25,12 +25,16 @@ async def create_checkout():
             "key": "domain",
             "label": {"type": "custom", "custom": "Dominio a escanear"},
             "type": "text",
-            "text": {"min_length": 3, "max_length": 64}
+            "text": {
+                "minimum_length": 3,   
+                "maximum_length": 64   
+            }
         }],
         success_url=os.getenv("SUCCESS_URL"),
         cancel_url=os.getenv("CANCEL_URL")
     )
     return {"id": session.id}
+
 
 @app.post("/stripe/webhook")
 async def stripe_webhook(req: Request):
