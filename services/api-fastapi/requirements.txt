@@ -1,3 +1,5 @@
 fastapi
 uvicorn[standard]
 stripe
+redis          # ← nuevo
+rq    
