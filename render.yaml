@@ -3,14 +3,14 @@
 # =======================================================
 
 services:
- # ─────────── API (web) ───────────
+  # ─────────── API (web) ───────────
   - name: api-fastapi
     type: web
     runtime: docker
     dockerfilePath: services/api-fastapi/Dockerfile
     plan: starter
     envVars:
-      - key: STRIPE_SECRET         # ← márcalos como externos
+      - key: STRIPE_SECRET         # secretos externos
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
@@ -20,12 +20,14 @@ services:
         sync: false
       - key: CANCEL_URL
         sync: false
-      # URL interna de Redis
+
+      # URL interna que Render generará para Redis
       - key: REDIS_URL
         fromDatabase:
           name: redis
           property: connectionString
-  # ─────────── WORKER (RQ) ───────────
+
+  # ─────────── WORKER RQ ───────────
   - name: scan-runner
     type: worker
     runtime: docker
@@ -42,6 +44,6 @@ services:
 # -------------------------------------------------------
 databases:
   - name: redis
-    databaseType: redis      # ← clave correcta
+    type: redis          # <- clave correcta
     plan: starter
-    ipAllowList: []          # vacío = solo accesible dentro de Render VPC
+    ipAllowList: []      # lista vacía = solo accesible dentro de Render
