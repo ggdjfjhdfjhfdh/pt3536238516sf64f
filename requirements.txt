@@ -6,4 +6,4 @@ pyhibp
 requests
 pytz
 dnstwist
-mailersend==1.1.0
+mailersend==0.6.0
