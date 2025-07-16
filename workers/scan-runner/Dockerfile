@@ -21,5 +21,6 @@ RUN apt-get update && \
     && pip install --no-cache-dir dnstwist \
     && pip install --no-cache-dir -r requirements.txt \
     && rm -rf /var/lib/apt/lists/*
-COPY run_scan.py .
-CMD ["python", "run_scan.py"]
+COPY run_scan.py entrypoint.sh ./
+RUN chmod +x /app/entrypoint.sh
+CMD ["/app/entrypoint.sh"]
