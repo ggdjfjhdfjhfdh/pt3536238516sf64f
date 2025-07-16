@@ -8,7 +8,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://pt-ldn-61169603-jpga.vercel.app/"],
-    allow_methods=["POST"],
+    allow_methods=["POST, OPTIONS"],
     allow_headers=["*"],
 )
 
