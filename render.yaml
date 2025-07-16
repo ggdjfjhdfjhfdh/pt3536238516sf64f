@@ -45,4 +45,4 @@ services:
       - key: MAILERSEND_API_KEY
         sync: false    # Configurar en el dashboard de Render
       - key: FROM_EMAIL
-        value: informe@auditatetumismo.es
+        value: informes@auditatetumiesmo.es

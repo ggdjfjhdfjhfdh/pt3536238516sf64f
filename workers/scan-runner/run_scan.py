@@ -234,7 +234,7 @@ def send_notification(email, pdf_path, domain):
         encoded = base64.b64encode(f.read()).decode()
 
     payload = {
-        "from": {"email": "informes@pentestexpress.com", "name": "Pentest Express"},
+        "from": {"email": "informes@auditatetumiesmo.es", "name": "Pentest Express"},
         "to":   [{"email": email}],
         "subject": f"Informe de seguridad – {domain}",
         "html": (f"<p>Adjuntamos el informe generado el "
