@@ -6,15 +6,19 @@ import subprocess
 import datetime as dt
 import base64
 import requests
+import re
+import shutil
 from rq import Queue, Worker
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://red-d1r7117diees73flo1lg:6379")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 q = Queue("scans", connection=redis.from_url(REDIS_URL))
 
-# Crear directorio temporal para cada escaneo
+# ────────────────────── utilidades ────────────────────── 
+SAFE_DOMAIN = re.compile(r"^[a-z0-9.-]{3,253}$", re.I)
+
 def create_tmp_dir(domain):
     return tempfile.mkdtemp(prefix=f"scan_{domain}_")
 
@@ -221,71 +225,66 @@ def upload_to_s3(pdf_path, domain):
 
 # 9. Enviar notificación por email con MailerSend (con adjunto)
 def send_notification(email, pdf_path, domain):
-    print(f"Enviando notificación a {email}...")
-    
-    api_key = os.getenv("MAILERSEND_API_KEY")
-    from_email = os.getenv("FROM_EMAIL", "informe@auditatetumismo.es")
-    if not api_key:
-        print("❌ MAILERSEND_API_KEY no definido")
+    key  = os.getenv("MAILERSEND_API_KEY")
+    if not key:
+        print("MAILERSEND_API_KEY no definido")
         return False
 
-    try:
-        with open(pdf_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
+    with open(pdf_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
 
-        payload = {
-            "from":   {"email": from_email, "name": "Pentest Express"},
-            "to":     [{"email": email, "name": ""}],
-            "subject":"Informe de seguridad – " + domain,
-            "html":   f"""
-              <h2>Informe de Seguridad – {domain}</h2>
-              <p>Adjunto encontrarás el PDF generado el {dt.datetime.now():%d/%m/%Y}.</p>
-              <p>Gracias por utilizar Pentest Express.</p>
-            """,
-            "attachments":[
-                {
-                    "filename": os.path.basename(pdf_path),
-                    "content":  encoded,
-                    "disposition":"attachment"
-                }
-            ]
-        }
+    payload = {
+        "from": {"email": "informes@pentestexpress.com", "name": "Pentest Express"},
+        "to":   [{"email": email}],
+        "subject": f"Informe de seguridad – {domain}",
+        "html": (f"<p>Adjuntamos el informe generado el "
+                 f"{dt.datetime.now():%d/%m/%Y}. "
+                 "Cualquier duda, responde a este correo.</p>"),
+        "attachments": [{
+            "filename": os.path.basename(pdf_path),
+            "content":  encoded,
+            "disposition": "attachment"
+        }]
+    }
 
-        r = requests.post(
-            "https://api.mailersend.com/v1/email",
-            headers={"Authorization": f"Bearer {api_key}",
-                     "Content-Type": "application/json"},
-            json=payload,
-            timeout=20
-        )
+    r = requests.post(
+        "https://api.mailersend.com/v1/email",
+        json=payload,
+        headers={"Authorization": f"Bearer {key}",
+                 "Content-Type": "application/json"},
+        timeout=20
+    )
 
-        if r.status_code == 202:
-            print("✅ Email enviado (x-message-id:", r.headers.get("x-message-id"), ")")
-            return True
-        else:
-            print("⚠️ MailerSend error", r.status_code, r.text)
-            return False
-    except Exception as e:
-        print(f"Error al enviar email: {e}")
-        return False
+    ok = r.status_code == 202
+    print("MailerSend:", r.status_code, r.text[:120])
+    return ok
 
 # Función principal que ejecuta todo el proceso
 def generate_pdf(domain, email):
     print(f"Iniciando escaneo completo para {domain}...")
-    
-    # Crear directorio temporal
-    tmp_dir = create_tmp_dir(domain)
-    print(f"Directorio temporal: {tmp_dir}")
-    
+
+    if not SAFE_DOMAIN.match(domain):
+        return {"status":"error", "error":"Dominio no válido"}
+
+    tmp_dir = create_tmp_dir(domain)          # dir temporal único
+    print("Directorio temporal:", tmp_dir)
+
     try:
-        # Ejecutar todas las etapas del escaneo
+        # 1-6  ────────────── pipeline ────────────── 
+        subs_path   = recon(domain, tmp_dir)
+        httpx_path  = fingerprint(subs_path, tmp_dir)
+        nuclei_path = nuclei_scan(httpx_path, tmp_dir)
+        tls_path    = tls_scan(domain, tmp_dir)
+        leaks_path  = check_leaks(domain, tmp_dir)
+        typo_path   = check_typosquats(domain, tmp_dir)
+
         results = {
-            'subdomains': recon(domain, tmp_dir),
-            'httpx': fingerprint(results['subdomains'], tmp_dir),
-            'nuclei': nuclei_scan(results['httpx'], tmp_dir),
-            'tls': tls_scan(domain, tmp_dir),
-            'leaks': check_leaks(domain, tmp_dir),
-            'typosquats': check_typosquats(domain, tmp_dir)
+            "subdomains": subs_path,
+            "httpx":      httpx_path,
+            "nuclei":     nuclei_path,
+            "tls":        tls_path,
+            "leaks":      leaks_path,
+            "typosquats": typo_path,
         }
         
         # Generar PDF
@@ -294,8 +293,8 @@ def generate_pdf(domain, email):
         # Ya no subimos a S3, solo guardamos la ruta local
         report_path = upload_to_s3(pdf_path, domain)
         
-        # Enviar notificación con el PDF adjunto
-        send_notification(email, pdf_path, domain)
+        # Enviar notificación con el PDF adjunto (MailerSend)
+        ok_email = send_notification(email, pdf_path, domain)
         
         print(f"✅ Escaneo completo para {domain}")
         print(f"📊 Informe generado en: {pdf_path}")
@@ -304,17 +303,15 @@ def generate_pdf(domain, email):
             "status": "success",
             "domain": domain,
             "email": email,
-            "report_path": pdf_path
+            "report_path": pdf_path,
+            "mailersend": ok_email
         }
-        
+
     except Exception as e:
-        print(f"❌ Error durante el escaneo: {e}")
-        return {
-            "status": "error",
-            "domain": domain,
-            "email": email,
-            "error": str(e)
-        }
+        print("❌ Error durante el escaneo:", e)
+        return {"status":"error","domain":domain,"email":email,"error":str(e)}
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)   # limpia /tmp
 
 # Punto de entrada para el worker
 if __name__ == "__main__":
