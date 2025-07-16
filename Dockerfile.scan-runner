@@ -42,7 +42,7 @@ WORKDIR /app
 # Copiar requirements.txt y instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir mailersend==1.1.0 pyhibp reportlab
+    && pip install --no-cache-dir mailersend==0.6.0 pyhibp reportlab
 
 # Copiar código de la aplicación
 COPY run_scan.py .
