@@ -7,7 +7,7 @@ app = FastAPI()
 # CORS – tu dominio de Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pt-ldn-61169603-jpga.vercel.app"],
+    allow_origins=["https://www.auditatetumismo.es"],
     allow_methods=["POST", "OPTIONS"],
     allow_headers=["*"],
     allow_credentials=True,
