@@ -38,7 +38,7 @@ services:
     runtime: docker
     dockerfilePath: Dockerfile.scan-runner
     dockerContext: .
-    plan: starter+    # Aumentado a starter+ para más recursos (1GB RAM / 1 CPU)
+    plan: standard    # Cambiado a standard para más recursos (1GB RAM / 1 CPU)
     envVars:
       - key: REDIS_URL
         value: redis://red-d1r7117diees73flo1lg:6379
