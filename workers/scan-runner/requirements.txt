@@ -1,4 +1,5 @@
-redis
-rq
-reportlab
-python-dotenv
+rq==2.4.0
+redis==5.0.4
+reportlab==4.2.0
+pyhibp==0.0.18
+requests==2.32.3
