@@ -8,7 +8,12 @@ import base64
 import requests
 import re
 import shutil
+import pandas as pd
+from pathlib import Path
 from rq import Queue, Worker
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from weasyprint import HTML
+# Mantenemos reportlab por compatibilidad
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -156,66 +161,102 @@ def check_typosquats(domain, tmp_dir):
     
     return typo_path
 
-# 7. Generación del informe PDF
+# Configuración de Jinja2
+TEMPL_PATH = Path(__file__).parent / "templates"
+env = Environment(
+    loader=FileSystemLoader(TEMPL_PATH),
+    autoescape=select_autoescape()
+)
+
+# 7. Generación del informe PDF con WeasyPrint y Jinja2
 def build_pdf(domain, tmp_dir, results):
-    print(f"[7/7] Generando informe PDF...")
+    print(f"[7/7] Generando informe PDF profesional con WeasyPrint...")
     pdf_path = f"{tmp_dir}/{domain}_security_report.pdf"
     
-    c = canvas.Canvas(pdf_path, pagesize=letter)
-    width, height = letter
-    
-    # Título y fecha
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(72, height - 72, f"Informe de Seguridad - {domain}")
-    
-    c.setFont("Helvetica", 12)
-    c.drawString(72, height - 100, f"Fecha: {dt.datetime.now().strftime('%d/%m/%Y')}")
-    c.drawString(72, height - 120, f"Análisis completo OWASP Top 10 + Cloud + Leaks + Phishing")
-    
-    # Resumen de resultados
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(72, height - 160, "Resumen de resultados:")
-    
-    c.setFont("Helvetica", 12)
-    y_pos = height - 190
-    
+    # ---------- 1) cargar datos ----------------- 
     # Subdominios
     try:
-        with open(results['subdomains'], 'r') as f:
-            subdomains_count = len(f.readlines())
-        c.drawString(72, y_pos, f"Subdominios encontrados: {subdomains_count}")
+        with open(results['subdomains']) as f:
+            raw_subs = [l.strip() for l in f if l.strip()]
+        # Intentar cargar información de httpx si está disponible
+        try:
+            with open(results['httpx']) as f:
+                httpx_data = json.load(f)
+                subs = []
+                for item in httpx_data:
+                    subs.append({
+                        "url": item.get("url", ""),
+                        "status": item.get("status_code", "N/A"),
+                        "tech": item.get("technologies", ["N/D"])
+                    })
+        except:
+            # Fallback si no hay datos de httpx
+            subs = [{"url": u, "status": 200, "tech": ["N/D"]} for u in raw_subs[:25]]
     except:
-        c.drawString(72, y_pos, f"Subdominios encontrados: No disponible")
-    y_pos -= 20
+        raw_subs = []
+        subs = []
     
-    # Vulnerabilidades
+    # Vulnerabilidades (Nuclei)
     try:
-        with open(results['nuclei'], 'r') as f:
-            vulns = json.load(f)
-            vulns_count = len(vulns)
-        c.drawString(72, y_pos, f"Vulnerabilidades detectadas: {vulns_count}")
+        with open(results['nuclei']) as f:
+            raw_nuclei = json.load(f)
+        vulns = [{
+            "host": n.get("matched-at", ""),
+            "template": n.get("templateID", ""),
+            "severity": n.get("info", {}).get("severity", "low")
+        } for n in raw_nuclei if n.get("info", {}).get("severity") in ["high", "critical"]]
     except:
-        c.drawString(72, y_pos, f"Vulnerabilidades detectadas: No disponible")
-    y_pos -= 20
+        raw_nuclei = []
+        vulns = []
     
     # TLS
-    c.drawString(72, y_pos, f"Análisis TLS: Completado")
-    y_pos -= 20
+    try:
+        with open(results['tls']) as f:
+            tls_content = f.read()
+        tls_status = "Problemas detectados" if "tls_issues" in tls_content else "OK"
+    except:
+        tls_status = "No analizado"
     
-    # Leaks
-    c.drawString(72, y_pos, f"Búsqueda de credenciales filtradas: Completado")
-    y_pos -= 20
+    # Credenciales filtradas
+    try:
+        with open(results['leaks']) as f:
+            leaks_data = json.load(f)
+        leaks_count = sum(1 for v in leaks_data.values() if v is True)
+        leaks_status = f"{leaks_count} credenciales comprometidas" if leaks_count > 0 else "No se encontraron filtraciones"
+    except:
+        leaks_status = "No analizado"
     
     # Typosquatting
-    c.drawString(72, y_pos, f"Análisis de dominios de phishing: Completado")
-    y_pos -= 40
+    try:
+        with open(results["typosquats"]) as f:
+            typos = f.read().splitlines()[1:20]  # primeras 20 líneas sin cabecera
+    except:
+        typos = []
     
-    # Nota de seguridad
-    c.setFillColor(colors.red)
-    c.drawString(72, y_pos, "IMPORTANTE: Este informe contiene información sensible de seguridad.")
-    c.drawString(72, y_pos - 20, "No compartir fuera de su organización.")
+    # Resumen
+    summary = {
+        "subdomains": len(raw_subs),
+        "vulns": len(vulns),
+        "tls": tls_status,
+        "leaks": leaks_status
+    }
     
-    c.save()
+    # ---------- 2) render HTML ------------------ 
+    ctx = dict(
+        domain=domain,
+        now=dt.datetime.now().strftime("%d/%m/%Y %H:%M"),
+        summary=summary,
+        subs=subs,
+        vulns=vulns,
+        typos=typos,
+        page_number="1"  # WeasyPrint puede manejar esto automáticamente con CSS
+    )
+    
+    html = env.get_template("report.html").render(**ctx)
+    
+    # ---------- 3) HTML -> PDF ------------------ 
+    HTML(string=html, base_url=str(TEMPL_PATH)).write_pdf(pdf_path)
+    
     return pdf_path
 
 # 8. Ya no subimos a S3, simplemente devolvemos la ruta del PDF
@@ -234,7 +275,7 @@ def send_notification(email, pdf_path, domain):
         encoded = base64.b64encode(f.read()).decode()
 
     payload = {
-        "from": {"email": "informes@auditatetumismo.es", "name": "Pentest Express"},
+        "from": {"email": "informes@pentestexpress.com", "name": "Pentest Express"},
         "to":   [{"email": email}],
         "subject": f"Informe de seguridad – {domain}",
         "html": (f"<p>Adjuntamos el informe generado el "

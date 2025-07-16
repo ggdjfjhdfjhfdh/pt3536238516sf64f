@@ -6,7 +6,12 @@ RUN apt-get update && \
     # ───── utilidades básicas ───── 
     apt-get install -y --no-install-recommends \
         curl wget git ca-certificates build-essential \
-        util-linux bsdmainutils  # ← debería incluir hexdump \
+        util-linux bsdmainutils \
+    \
+    # ───── dependencias para WeasyPrint ───── 
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+        libjpeg62-turbo libgif7 libpng16-16 \
     \
     # Verificar que hexdump esté disponible o instalarlo manualmente
     && (which hexdump || apt-get install -y --no-install-recommends bsdextrautils || apt-get install -y --no-install-recommends busybox) \
