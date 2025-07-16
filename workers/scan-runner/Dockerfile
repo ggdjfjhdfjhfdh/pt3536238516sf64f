@@ -6,7 +6,10 @@ RUN apt-get update && \
     # ───── utilidades básicas ───── 
     apt-get install -y --no-install-recommends \
         curl wget git ca-certificates build-essential \
-        util-linux bsdmainutils  # ← incluye «hexdump» \
+        util-linux bsdmainutils  # ← debería incluir hexdump \
+    \
+    # Verificar que hexdump esté disponible o instalarlo manualmente
+    && (which hexdump || apt-get install -y --no-install-recommends bsdextrautils || apt-get install -y --no-install-recommends busybox) \
     \
     # ───── herramientas de seguridad ───── 
     && wget -qO /usr/local/bin/httpx      https://github.com/projectdiscovery/httpx/releases/download/v1.6.3/httpx_1.6.3_linux_amd64  && chmod +x /usr/local/bin/httpx \
