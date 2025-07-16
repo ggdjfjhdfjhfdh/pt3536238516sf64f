@@ -1,14 +1,54 @@
 FROM python:3.12-slim
 
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    build-essential \
+    libssl-dev \
+    jq \
+    dnsutils \
+    nmap \
+    openssl \
+    unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar Go (necesario para algunas herramientas)
+RUN curl -sL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
+    && echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
+ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
+
+# Instalar herramientas de reconocimiento
+RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest \
+    && go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest \
+    && go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest \
+    && go install -v github.com/owasp-amass/amass/v3/...@master
+
+# Instalar testssl.sh
+RUN git clone --depth 1 https://github.com/drwetter/testssl.sh.git /opt/testssl \
+    && chmod +x /opt/testssl/testssl.sh \
+    && ln -s /opt/testssl/testssl.sh /usr/local/bin/testssl.sh
+
+# Instalar dnstwist
+RUN pip install --no-cache-dir dnstwist
+
+# Ya no necesitamos s3scanner
+
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copiar requirements.txt y instalar dependencias de Python
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir mailersend==1.1.0 pyhibp reportlab
 
-# Copy application code
+# Copiar código de la aplicación
 COPY run_scan.py .
 
-# Command to run the application
+# Crear directorio para resultados temporales
+RUN mkdir -p /tmp/scan_results
+
+# Comando para ejecutar el worker
 CMD ["python", "run_scan.py"]

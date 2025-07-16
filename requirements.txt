@@ -2,3 +2,8 @@ redis
 rq
 reportlab
 python-dotenv
+pyhibp
+requests
+pytz
+dnstwist
+mailersend==1.1.0
