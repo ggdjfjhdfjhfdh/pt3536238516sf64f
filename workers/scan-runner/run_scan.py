@@ -506,12 +506,12 @@ def send_notification(email, pdf_path, domain, results=None):
 
     # Preparar payload para MailerSend
     payload = {
-        "from": {"email": "informes@pentestexpress.com", "name": "Pentest Express"},
+        "from": {"email": "informes@pentestexpress.com", "name": "Auditatetumismo"},
         "to":   [{"email": email}],
         "subject": f"Informe de seguridad – {domain}",
         "html": email_body,
     }
-    
+     
     # Añadir el PDF como adjunto si está disponible
     if encoded:
         payload["attachments"] = [{
@@ -519,7 +519,7 @@ def send_notification(email, pdf_path, domain, results=None):
             "content":  encoded,
             "disposition": "attachment"
         }]
-    }
+    
 
     r = requests.post(
         "https://api.mailersend.com/v1/email",
