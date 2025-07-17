@@ -439,10 +439,61 @@ def build_pdf(domain, tmp_dir, results):
         page_number="1"  # WeasyPrint puede manejar esto automáticamente con CSS
     )
     
-    html = env.get_template("report.html").render(**ctx)
+    # Imprimir información de depuración para verificar que los datos están correctos
+    print(f"Datos para el informe: {len(subs)} subdominios, {len(vulns)} vulnerabilidades, {len(typos)} dominios typosquatting")
+    print(f"Resumen: {summary}")
+    
+    # Verificar que la plantilla existe
+    template_path = TEMPL_PATH / "report.html"
+    if not template_path.exists():
+        print(f"ERROR: La plantilla no existe en {template_path}")
+        # Crear una plantilla básica como fallback
+        with open(template_path, "w") as f:
+            f.write("<!DOCTYPE html><html><body><h1>Informe de seguridad - {{domain}}</h1><p>Generado el {{now}}</p></body></html>")
+        print("Se ha creado una plantilla básica como fallback")
+    else:
+        print(f"Plantilla encontrada en {template_path}")
+    
+    # Verificar que el entorno Jinja2 está configurado correctamente
+    try:
+        html = env.get_template("report.html").render(**ctx)
+        print("Plantilla HTML renderizada correctamente")
+    except Exception as e:
+        print(f"ERROR al renderizar la plantilla HTML: {e}")
+        # Crear HTML básico como fallback
+        html = f"""<!DOCTYPE html>
+        <html>
+        <body>
+            <h1>Informe de seguridad - {domain}</h1>
+            <p>Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+            <p>Se encontraron {len(subs)} subdominios y {len(vulns)} vulnerabilidades.</p>
+        </body>
+        </html>"""
+        print("Se ha creado un HTML básico como fallback")
     
     # ---------- 3) HTML -> PDF ------------------ 
-    HTML(string=html, base_url=str(TEMPL_PATH)).write_pdf(pdf_path)
+    try:
+        HTML(string=html, base_url=str(TEMPL_PATH)).write_pdf(pdf_path)
+        print(f"PDF generado correctamente y guardado en {pdf_path}")
+    except Exception as e:
+        print(f"ERROR al generar el PDF con WeasyPrint: {e}")
+        # Crear un PDF básico como fallback usando reportlab
+        try:
+            from reportlab.pdfgen import canvas
+            p = canvas.Canvas(str(pdf_path))
+            p.drawString(100, 750, f"Informe de seguridad - {domain}")
+            p.drawString(100, 730, f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            p.drawString(100, 710, f"Se encontraron {len(subs)} subdominios y {len(vulns)} vulnerabilidades.")
+            p.save()
+            print("Se ha creado un PDF básico como fallback usando reportlab")
+        except Exception as e2:
+            print(f"ERROR al generar el PDF fallback con reportlab: {e2}")
+            # Último recurso: crear un archivo de texto
+            with open(str(pdf_path), 'w') as f:
+                f.write(f"Informe de seguridad - {domain}\n")
+                f.write(f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+                f.write(f"Se encontraron {len(subs)} subdominios y {len(vulns)} vulnerabilidades.\n")
+            print("Se ha creado un archivo de texto como último recurso")
     
     return pdf_path
 
@@ -519,7 +570,6 @@ def send_notification(email, pdf_path, domain, results=None):
             "content":  encoded,
             "disposition": "attachment"
         }]
-    
 
     r = requests.post(
         "https://api.mailersend.com/v1/email",
