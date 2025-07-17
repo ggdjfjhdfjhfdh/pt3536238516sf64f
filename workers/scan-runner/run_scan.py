@@ -315,8 +315,9 @@ def build_pdf(domain, tmp_dir, results):
             raw_nuclei = json.load(f)
         vulns = [{
             "host": n.get("matched-at", ""),
-            "template": n.get("templateID", ""),
-            "severity": n.get("info", {}).get("severity", "low")
+            "template": n.get("template-id", ""),
+            "severity": n.get("info", {}).get("severity", "low"),
+            "description": n.get("info", {}).get("description", "No disponible")
         } for n in raw_nuclei if n.get("info", {}).get("severity") in ["high", "critical"]]
     except:
         raw_nuclei = []
@@ -405,9 +406,7 @@ def build_pdf(domain, tmp_dir, results):
             # Ordenar por peligrosidad (priorizar dominios con MX configurado)
             active_typos.sort(key=lambda x: 1 if x.get("dns_mx") else 0, reverse=True)
             
-            # Convertir a formato legible
-            typos = [f"{t['fuzzer']}: {t['domain']} ({t.get('dns_a', 'Sin IP')})" 
-                    for t in active_typos[:20]]
+            typos = active_typos[:20]
         else:
             # Fallback al CSV
             with open(results["typosquats"]) as f:
@@ -518,12 +517,16 @@ def send_notification(email, pdf_path, domain, results=None):
         encoded = None
 
     # Generar un resumen del escaneo para incluir en el cuerpo del email
-    email_body = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
-        <h2 style="color: #2c3e50;">Informe de Seguridad: {domain}</h2>
-        <p>Adjuntamos el informe de seguridad generado el {dt.datetime.now():%d/%m/%Y %H:%M}.</p>
+    email_body = f"""<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <div style="text-align: center; border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
+            <h1 style="font-size: 24px; color: #1a237e; margin: 0;">Pentest Express</h1>
+        </div>
+        <h2 style="font-size: 20px; color: #2c3e50;">Informe de Seguridad para {domain}</h2>
+        <p>Estimado cliente,</p>
+        <p>Adjuntamos el informe de seguridad generado para su dominio <strong>{domain}</strong> el {dt.datetime.now():%d/%m/%Y a las %H:%M}.</p>
         
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h3 style="color: #2c3e50; margin-top: 0;">Resumen del Análisis</h3>"""
+            <h3 style="color: #2c3e50; margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Resumen del Análisis</h3>"""
     
     # Añadir información del escaneo si está disponible
     if results:
@@ -543,16 +546,19 @@ def send_notification(email, pdf_path, domain, results=None):
             except:
                 vulns_count = "N/D"
                 
-            email_body += f"""<ul>
-                <li><strong>Subdominios encontrados:</strong> {subdomains_count}</li>
-                <li><strong>Vulnerabilidades detectadas:</strong> {vulns_count}</li>
+            email_body += f"""<ul style='list-style-type: none; padding-left: 0;'>
+                <li style='margin-bottom: 10px;'><strong>🔍 Subdominios encontrados:</strong> {subdomains_count}</li>
+                <li><strong>⚠️ Vulnerabilidades detectadas:</strong> {vulns_count} (críticas/altas)</li>
             </ul>"""
         except Exception as e:
-            email_body += f"<p>Error generando resumen: {str(e)}</p>"
+            email_body += f"<p>No se pudo generar el resumen del escaneo: {str(e)}</p>"
     
     email_body += """</div>
-        <p>Para más detalles, consulte el informe PDF adjunto. Si tiene alguna pregunta o necesita aclaraciones, no dude en responder a este correo.</p>
-        <p style="color: #7f8c8d; font-size: 0.9em; margin-top: 30px;">Este es un correo automático generado por Pentest Express.</p>
+        <p>Para un análisis detallado de los hallazgos, consulte el <strong>informe PDF adjunto</strong>.</p>
+        <p>Si tiene alguna pregunta o necesita una evaluación más profunda, no dude en contactarnos.</p>
+        <div style="text-align: center; color: #888; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+            <p>Pentest Express &copy; {dt.datetime.now().year} | Informe confidencial</p>
+        </div>
     </div>"""
 
     # Preparar payload para MailerSend
