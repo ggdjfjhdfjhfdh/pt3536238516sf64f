@@ -273,18 +273,22 @@ def build_pdf(domain, tmp_dir, results):
     env = Environment(loader=FileSystemLoader(template_path))
     template = env.get_template('report.html')
 
-    # Contexto con todos los datos para la plantilla
+    # ───────────────── Preparación del contexto para Jinja2 ──────────────────
+
+    summary = {
+        "subdomains": len(subdomains_data),
+        "vulns": len(nuclei_vulns),
+        "tls": "Revisar manualmente", # Simplificado por ahora
+        "leaks": "Revisar manualmente" # Simplificado por ahora
+    }
+
     context = {
+        "now": dt.datetime.now().strftime('%d/%m/%Y a las %H:%M'),
         "domain": domain,
-        "scan_date": dt.datetime.now().strftime('%d/%m/%Y'),
-        "subdomains": subdomains_data,
-        "subdomain_count": len(subdomains_data),
-        "vulnerabilities": nuclei_vulns,
-        "vuln_count": len(nuclei_vulns),
-        "tls_results": tls_data,
-        "leaked_credentials": leaked_creds,
-        "typosquatting_domains": typosquatting_domains,
-        "typosquatting_count": len(typosquatting_domains)
+        "summary": summary,
+        "subs": subdomains_data,
+        "vulns": nuclei_vulns,
+        "typos": typosquatting_domains
     }
 
     # Renderizar el HTML
@@ -319,13 +323,45 @@ def send_notification(email, pdf_path, domain):
     with open(pdf_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
 
+    # Cargar el resumen de resultados para el email
+    # NOTA: Esto es una simplificación. En un caso real, pasaríamos los datos
+    # desde `run_scan` a `send_notification` para no leer el disco dos veces.
+    try:
+        with open(f"{os.path.dirname(pdf_path)}/httpx.json", 'r') as f:
+            subdomain_count = sum(1 for _ in f)
+        with open(f"{os.path.dirname(pdf_path)}/nuclei.json", 'r') as f:
+            vuln_count = sum(1 for _ in f)
+    except FileNotFoundError:
+        subdomain_count = "N/A"
+        vuln_count = "N/A"
+
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; color: #333;">
+        <h1 style="color: #1a237e;">Pentest Express</h1>
+        <p>Hola,</p>
+        <p>Adjunto encontrarás tu informe de seguridad para el dominio <strong>{domain}</strong>, generado el {dt.datetime.now().strftime('%d/%m/%Y')}.</p>
+        
+        <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 5px;">
+            <h3 style="color: #1a237e;">Resumen rápido:</h3>
+            <ul>
+                <li><strong>Subdominios encontrados:</strong> {subdomain_count}</li>
+                <li><strong>Vulnerabilidades (críticas/altas):</strong> {vuln_count}</li>
+            </ul>
+        </div>
+
+        <p>Para un análisis detallado, consulta el informe PDF adjunto.</p>
+        <br>
+        <p>Gracias por confiar en Pentest Express.</p>
+        <hr>
+        <p style="font-size: 10px; color: #888;">Este mensaje es confidencial. Si no eres el destinatario, por favor, notifícalo y elimínalo.</p>
+    </div>
+    """
+
     payload = {
         "from": {"email": "informes@auditatetumismo.es", "name": "Pentest Express"},
         "to":   [{"email": email}],
         "subject": f"Informe de seguridad – {domain}",
-        "html": (f"<p>Adjuntamos el informe generado el "
-                 f"{dt.datetime.now():%d/%m/%Y}. "
-                 "Cualquier duda, responde a este correo.</p>"),
+        "html": html_body,
         "attachments": [{
             "filename": os.path.basename(pdf_path),
             "content":  encoded,
