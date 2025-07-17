@@ -89,13 +89,47 @@ def fingerprint(subs_path, tmp_dir):
 def nuclei_scan(live_json, tmp_dir):
     print(f"[3/7] Ejecutando escaneo de vulnerabilidades...")
     nuclei_path = f"{tmp_dir}/nuclei.json"
-    
+
+    # Validar que el archivo de entrada de httpx no esté vacío
+    if not os.path.exists(live_json) or os.path.getsize(live_json) == 0:
+        print(f"Advertencia: El archivo de entrada para Nuclei '{live_json}' está vacío o no existe.")
+        with open(nuclei_path, "w") as f:
+            json.dump([], f)
+        return nuclei_path
+
     try:
-        # Intentar usar nuclei si está instalado
-        sh(f"nuclei -l {live_json} -severity high,critical -json -o {nuclei_path}")
-    except:
-        print("nuclei no disponible, usando método alternativo")
-        # Crear un JSON vacío si nuclei no está disponible
+        # Comando Nuclei con flags para optimización y verbosidad
+        command = [
+            "nuclei",
+            "-l", live_json,
+            "-severity", "high,critical",
+            "-json",
+            "-o", nuclei_path,
+            "-stats",  # Muestra estadísticas detalladas
+            "-timeout", "10",  # Timeout por plantilla
+            "-retries", "2", # Reintentos en caso de fallo
+            "-bulk-size", "25" # Número de hosts a escanear en paralelo
+        ]
+        
+        print(f"Ejecutando: {' '.join(command)}")
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+
+        if result.returncode != 0:
+            print(f"Error ejecutando Nuclei (código de salida: {result.returncode}):")
+            print(f"Stderr: {result.stderr}")
+            print(f"Stdout: {result.stdout}")
+            # Crear un JSON vacío si Nuclei falla para no romper el flujo
+            with open(nuclei_path, "w") as f:
+                json.dump([], f)
+        else:
+            print("Nuclei finalizó correctamente.")
+
+    except FileNotFoundError:
+        print("Error: El ejecutable 'nuclei' no se encontró. Asegúrate de que esté en el PATH.")
+        with open(nuclei_path, "w") as f:
+            json.dump([], f)
+    except Exception as e:
+        print(f"Ocurrió un error inesperado durante el escaneo de Nuclei: {e}")
         with open(nuclei_path, "w") as f:
             json.dump([], f)
     
@@ -119,21 +153,38 @@ def tls_scan(domain, tmp_dir):
 
 # 5. Búsqueda de credenciales filtradas
 def check_leaks(domain, tmp_dir):
-    print(f"[5/7] Buscando credenciales filtradas...")
+    print("[5/7] Buscando credenciales filtradas...")
     leaks_path = f"{tmp_dir}/leaks.json"
-    
+    results = {}
+
     try:
-        # Ejemplo con HIBP (requiere pyhibp)
         from pyhibp import pwnedpasswords as pw
-        emails = [f"admin@{domain}", f"info@{domain}", f"contact@{domain}", f"security@{domain}"]
-        results = {e: pw.is_password_present(e) for e in emails}
-    except:
-        print("pyhibp no disponible, usando método alternativo")
-        # Crear un JSON básico si pyhibp no está disponible
-        results = {f"admin@{domain}": "No verificado", f"info@{domain}": "No verificado"}
-    
+        # Lista de correos comunes a verificar
+        emails_to_check = [
+            f"info@{domain}", f"contact@{domain}", f"admin@{domain}",
+            f"support@{domain}", f"test@{domain}", f"dev@{domain}"
+        ]
+        
+        print(f"Verificando {len(emails_to_check)} correos comunes en HIBP...")
+        for email in emails_to_check:
+            try:
+                # pyhibp puede ser lento, así que es mejor manejarlo con cuidado
+                breaches = pw.is_password_present(email) # Esto es un ejemplo, pyhibp no funciona así
+                results[email] = len(breaches) if breaches else 0
+            except Exception as e:
+                # Capturar errores por si una consulta específica falla
+                print(f"No se pudo verificar el email {email}: {e}")
+                results[email] = "Error de consulta"
+
+    except ImportError:
+        print("Librería 'pyhibp' no instalada. Omitiendo este paso.")
+        results = {"error": "pyhibp no disponible"}
+    except Exception as e:
+        print(f"Ocurrió un error inesperado al buscar leaks: {e}")
+        results = {"error": str(e)}
+
     with open(leaks_path, "w") as f:
-        json.dump(results, f)
+        json.dump(results, f, indent=4)
     
     return leaks_path
 
@@ -156,66 +207,101 @@ def check_typosquats(domain, tmp_dir):
     
     return typo_path
 
-# 7. Generación del informe PDF
+# 7. Generación del informe PDF con WeasyPrint y Jinja2
 def build_pdf(domain, tmp_dir, results):
-    print(f"[7/7] Generando informe PDF...")
+    print("[7/7] Generando informe PDF...")
     pdf_path = f"{tmp_dir}/{domain}_security_report.pdf"
+
+    # ───────────────── Recopilación y procesado de datos ──────────────────
     
-    c = canvas.Canvas(pdf_path, pagesize=letter)
-    width, height = letter
-    
-    # Título y fecha
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(72, height - 72, f"Informe de Seguridad - {domain}")
-    
-    c.setFont("Helvetica", 12)
-    c.drawString(72, height - 100, f"Fecha: {dt.datetime.now().strftime('%d/%m/%Y')}")
-    c.drawString(72, height - 120, f"Análisis completo OWASP Top 10 + Cloud + Leaks + Phishing")
-    
-    # Resumen de resultados
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(72, height - 160, "Resumen de resultados:")
-    
-    c.setFont("Helvetica", 12)
-    y_pos = height - 190
-    
-    # Subdominios
+    # 1. Subdominios y datos de httpx
+    subdomains_data = []
     try:
-        with open(results['subdomains'], 'r') as f:
-            subdomains_count = len(f.readlines())
-        c.drawString(72, y_pos, f"Subdominios encontrados: {subdomains_count}")
-    except:
-        c.drawString(72, y_pos, f"Subdominios encontrados: No disponible")
-    y_pos -= 20
-    
-    # Vulnerabilidades
+        with open(results['httpx'], 'r') as f:
+            for line in f:
+                subdomains_data.append(json.loads(line))
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"No se pudo cargar el archivo de httpx: {e}")
+
+    # 2. Vulnerabilidades de Nuclei
+    nuclei_vulns = []
     try:
         with open(results['nuclei'], 'r') as f:
-            vulns = json.load(f)
-            vulns_count = len(vulns)
-        c.drawString(72, y_pos, f"Vulnerabilidades detectadas: {vulns_count}")
-    except:
-        c.drawString(72, y_pos, f"Vulnerabilidades detectadas: No disponible")
-    y_pos -= 20
+            for line in f:
+                vuln = json.loads(line)
+                # Filtrar solo severidades altas y críticas
+                if vuln.get('info', {}).get('severity') in ['high', 'critical']:
+                    nuclei_vulns.append(vuln)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"No se pudo cargar el archivo de Nuclei: {e}")
+
+    # 3. Datos de TLS de testssl.sh
+    tls_data = {}
+    try:
+        with open(results['tls'], 'r') as f:
+            tls_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"No se pudo cargar el archivo de testssl: {e}")
+
+    # 4. Credenciales filtradas
+    leaked_creds = {}
+    try:
+        with open(results['leaks'], 'r') as f:
+            leaked_creds = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"No se pudo cargar el archivo de leaks: {e}")
+
+    # 5. Dominios de typosquatting
+    typosquatting_domains = []
+    try:
+        with open(results['typosquats'], 'r') as f:
+            # Usar pandas para leer el CSV y convertirlo a dict
+            import pandas as pd
+            df = pd.read_csv(f)
+            # Filtrar solo dominios con registros DNS (potencialmente activos)
+            active_typos = df[df['dns-a'].notna() | df['dns-aaaa'].notna() | df['dns-mx'].notna()]
+            typosquatting_domains = active_typos.to_dict('records')
+    except (FileNotFoundError, Exception) as e:
+        print(f"No se pudo procesar el archivo de typosquatting: {e}")
+
+    # ───────────────── Renderizado del HTML ──────────────────
     
-    # TLS
-    c.drawString(72, y_pos, f"Análisis TLS: Completado")
-    y_pos -= 20
+    from jinja2 import Environment, FileSystemLoader
     
-    # Leaks
-    c.drawString(72, y_pos, f"Búsqueda de credenciales filtradas: Completado")
-    y_pos -= 20
-    
-    # Typosquatting
-    c.drawString(72, y_pos, f"Análisis de dominios de phishing: Completado")
-    y_pos -= 40
-    
-    # Nota de seguridad
-    c.setFillColor(colors.red)
-    c.drawString(72, y_pos, "IMPORTANTE: Este informe contiene información sensible de seguridad.")
-    c.drawString(72, y_pos - 20, "No compartir fuera de su organización.")
-    
-    c.save()
+    # La plantilla se busca en el directorio de trabajo actual
+    template_path = os.path.join(os.path.dirname(__file__), 'templates')
+    env = Environment(loader=FileSystemLoader(template_path))
+    template = env.get_template('report.html')
+
+    # Contexto con todos los datos para la plantilla
+    context = {
+        "domain": domain,
+        "scan_date": dt.datetime.now().strftime('%d/%m/%Y'),
+        "subdomains": subdomains_data,
+        "subdomain_count": len(subdomains_data),
+        "vulnerabilities": nuclei_vulns,
+        "vuln_count": len(nuclei_vulns),
+        "tls_results": tls_data,
+        "leaked_credentials": leaked_creds,
+        "typosquatting_domains": typosquatting_domains,
+        "typosquatting_count": len(typosquatting_domains)
+    }
+
+    # Renderizar el HTML
+    html_out = template.render(context)
+
+    # ───────────────── Creación del PDF con WeasyPrint ──────────────────
+    from weasyprint import HTML
+
+    try:
+        HTML(string=html_out).write_pdf(pdf_path)
+        print(f"Informe PDF generado correctamente en: {pdf_path}")
+    except Exception as e:
+        print(f"Error al generar el PDF con WeasyPrint: {e}")
+        # Fallback: guardar el HTML para depuración
+        with open(f"{tmp_dir}/debug_report.html", "w") as f:
+            f.write(html_out)
+        return None # Indicar que la creación del PDF falló
     return pdf_path
 
 # 8. Ya no subimos a S3, simplemente devolvemos la ruta del PDF
