@@ -6,6 +6,14 @@ COPY requirements.txt .
 # Crear directorio para plantillas
 RUN mkdir -p /app/templates
 
+RUN apk add --no-cache \
+    libgobject-2.0 \
+    libpango-1.0 \
+    harfbuzz \
+    libfontconfig \
+    libjpeg-turbo \
+    openjpeg
+
 RUN apt-get update && \
     # ───── utilidades básicas ───── 
     apt-get install -y --no-install-recommends \

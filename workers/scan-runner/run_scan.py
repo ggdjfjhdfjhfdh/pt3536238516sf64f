@@ -20,8 +20,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
 # Suprimir advertencias de SSL no verificado (normales en pentesting)
-from urllib3.exceptions import InsecureRequestWarning
-warnings.filterwarnings('ignore', category=InsecureRequestWarning)
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 q = Queue("scans", connection=redis.from_url(REDIS_URL))
