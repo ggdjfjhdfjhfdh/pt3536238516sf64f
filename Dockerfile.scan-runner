@@ -39,7 +39,7 @@ WORKDIR /app
 # Copiar requirements.txt y instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir mailersend==0.6.0
+    && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0
 
 # Crear directorio para templates
 RUN mkdir -p /app/templates

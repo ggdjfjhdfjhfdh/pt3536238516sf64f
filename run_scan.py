@@ -9,9 +9,6 @@ import requests
 import re
 import shutil
 from rq import Queue, Worker
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 q = Queue("scans", connection=redis.from_url(REDIS_URL))
