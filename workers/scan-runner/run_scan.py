@@ -33,10 +33,11 @@ def create_tmp_dir(domain):
     return tempfile.mkdtemp(prefix=f"scan_{domain}_")
 
 # Ejecutar comandos shell y capturar salida con mejor manejo de errores
-def sh(cmd, ignore_errors=False):
+def sh(cmd, ignore_errors=False, timeout=300):
     print(f"Ejecutando: {cmd}")
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)  # 5 min timeout
+        # Usar un timeout configurable con valor predeterminado de 5 minutos
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
         if result.returncode != 0:
             error_msg = f"Error ({result.returncode}): {result.stderr}"
             print(error_msg)
@@ -44,9 +45,9 @@ def sh(cmd, ignore_errors=False):
                 raise Exception(error_msg)
         return result.stdout
     except subprocess.TimeoutExpired:
-        print(f"Timeout ejecutando: {cmd}")
+        print(f"Timeout ejecutando: {cmd} (después de {timeout} segundos)")
         if not ignore_errors:
-            raise Exception(f"Timeout ejecutando: {cmd}")
+            raise Exception(f"Timeout ejecutando: {cmd} (después de {timeout} segundos)")
         return ""
     except Exception as e:
         print(f"Excepción ejecutando {cmd}: {str(e)}")
@@ -114,18 +115,48 @@ def nuclei_scan(live_json, tmp_dir):
     print(f"[3/7] Ejecutando escaneo de vulnerabilidades...")
     nuclei_path = f"{tmp_dir}/nuclei.json"
     
+    # Validar que el archivo de entrada no esté vacío
+    if not os.path.exists(live_json) or os.path.getsize(live_json) == 0:
+        print(f"Advertencia: El archivo de entrada '{live_json}' está vacío o no existe.")
+        with open(nuclei_path, "w") as f:
+            json.dump([], f)
+        return nuclei_path
+    
     try:
         # Verificar que nuclei esté instalado
         version_check = sh("nuclei -version", ignore_errors=True)
         if version_check:
             # Usar parámetros más robustos para nuclei
-            sh(f"nuclei -l {live_json} -severity high,critical -json -o {nuclei_path} -timeout 5 -retries 2", ignore_errors=True)
+            sh(f"nuclei -l {live_json} -severity high,critical -json -o {nuclei_path} -timeout 5 -retries 2", ignore_errors=True, timeout=600)  # 10 min timeout para nuclei
+            
+            # Verificar que el archivo de resultados se haya creado correctamente
+            if not os.path.exists(nuclei_path) or os.path.getsize(nuclei_path) == 0:
+                print("Nuclei no generó resultados, creando archivo JSON vacío")
+                with open(nuclei_path, "w") as f:
+                    json.dump([], f)
         else:
             raise Exception("Nuclei no está instalado o no es accesible")
     except Exception as e:
         print(f"Error con nuclei: {str(e)}")
         print("Creando archivo de resultados vacío para nuclei")
         # Crear un JSON vacío si nuclei no está disponible o falla
+        with open(nuclei_path, "w") as f:
+            json.dump([], f)
+    
+    # Verificar el formato del archivo de resultados
+    try:
+        with open(nuclei_path, "r") as f:
+            content = f.read().strip()
+            if content:
+                # Intentar cargar el JSON para verificar su validez
+                try:
+                    json.loads(content)
+                except json.JSONDecodeError:
+                    print("El archivo de resultados de nuclei no es un JSON válido, creando uno nuevo")
+                    with open(nuclei_path, "w") as f:
+                        json.dump([], f)
+    except Exception as e:
+        print(f"Error verificando el archivo de resultados de nuclei: {str(e)}")
         with open(nuclei_path, "w") as f:
             json.dump([], f)
     
@@ -182,6 +213,18 @@ def check_leaks(domain, tmp_dir):
     print(f"[5/7] Buscando credenciales filtradas...")
     leaks_path = f"{tmp_dir}/leaks.json"
     
+    # Lista de correos comunes para verificar
+    emails = [
+        f"admin@{domain}", 
+        f"info@{domain}", 
+        f"contact@{domain}", 
+        f"security@{domain}",
+        f"soporte@{domain}",
+        f"contacto@{domain}"
+    ]
+    
+    results = {}
+    
     try:
         # Verificar si pyhibp está instalado
         try:
@@ -196,18 +239,7 @@ def check_leaks(domain, tmp_dir):
             # from pyhibp import set_api_key
             # set_api_key("tu-api-key")
             
-            # Comprobar emails comunes para el dominio
-            emails = [
-                f"admin@{domain}", 
-                f"info@{domain}", 
-                f"contact@{domain}", 
-                f"security@{domain}",
-                f"soporte@{domain}",
-                f"contacto@{domain}"
-            ]
-            
             # Usar un diccionario para almacenar resultados con manejo de errores por email
-            results = {}
             for email in emails:
                 try:
                     results[email] = {"filtrado": pw.is_password_present(email), "error": None}
@@ -219,12 +251,73 @@ def check_leaks(domain, tmp_dir):
     except Exception as e:
         print(f"Error con pyhibp: {str(e)}")
         print("Usando método alternativo para verificación de filtraciones")
-        # Crear un JSON más informativo si pyhibp no está disponible
-        results = {
-            f"admin@{domain}": {"filtrado": "No verificado", "error": "pyhibp no disponible"},
-            f"info@{domain}": {"filtrado": "No verificado", "error": "pyhibp no disponible"},
-            f"contacto@{domain}": {"filtrado": "No verificado", "error": "pyhibp no disponible"}
-        }
+        # Implementación alternativa usando requests y la API de HIBP directamente
+        try:
+            import requests
+            import hashlib
+            import time
+            
+            for email in emails:
+                try:
+                    # Crear un hash SHA-1 del correo para mayor privacidad
+                    email_hash = hashlib.sha1(email.encode('utf-8')).hexdigest().upper()
+                    prefix = email_hash[:5]
+                    suffix = email_hash[5:]
+                    
+                    # Consultar la API de HIBP con el prefijo del hash
+                    url = f"https://api.pwnedpasswords.com/range/{prefix}"
+                    headers = {
+                        "User-Agent": "PentestExpress/1.0",
+                        "Accept": "application/json"
+                    }
+                    
+                    response = requests.get(url, headers=headers)
+                    
+                    if response.status_code == 200:
+                        # Buscar el sufijo en la respuesta
+                        is_pwned = False
+                        for line in response.text.splitlines():
+                            if line.split(":")[0] == suffix:
+                                is_pwned = True
+                                count = int(line.split(":")[1])
+                                results[email] = {
+                                    "filtrado": True,
+                                    "apariciones": count,
+                                    "severidad": "high" if count > 10 else "medium"
+                                }
+                                print(f"⚠️ El correo {email} aparece en filtraciones de datos ({count} veces)")
+                                break
+                        
+                        if not is_pwned:
+                            results[email] = {
+                                "filtrado": False,
+                                "apariciones": 0,
+                                "severidad": "info"
+                            }
+                            print(f"✅ El correo {email} no aparece en filtraciones")
+                    else:
+                        results[email] = {
+                            "filtrado": "desconocido",
+                            "error": f"Error en API: {response.status_code}",
+                            "severidad": "info"
+                        }
+                        print(f"No se pudo verificar el email {email}: Error en API ({response.status_code})")
+                    
+                    # Esperar un poco entre consultas para no sobrecargar la API
+                    time.sleep(1.5)
+                    
+                except Exception as e:
+                    print(f"No se pudo verificar el email {email}: {str(e)}")
+                    results[email] = {
+                        "filtrado": "desconocido",
+                        "error": str(e),
+                        "severidad": "info"
+                    }
+        except Exception as e:
+            print(f"Error con el método alternativo: {str(e)}")
+            # Crear un JSON más informativo si ambos métodos fallan
+            for email in emails:
+                results[email] = {"filtrado": "No verificado", "error": "Métodos de verificación no disponibles"}
     
     # Guardar resultados en formato JSON
     with open(leaks_path, "w") as f:
@@ -299,7 +392,10 @@ def build_pdf(domain, tmp_dir, results):
         # Intentar cargar información de httpx si está disponible
         try:
             with open(results['httpx']) as f:
-                httpx_data = json.load(f)
+                content = f.read().strip()
+                if not content:  # Verificar que el archivo no esté vacío
+                    raise ValueError("Archivo httpx vacío")
+                httpx_data = json.loads(content)
                 subs = []
                 for item in httpx_data:
                     subs.append({
@@ -307,31 +403,45 @@ def build_pdf(domain, tmp_dir, results):
                         "status": item.get("status_code", "N/A"),
                         "tech": item.get("technologies", ["N/D"])
                     })
-        except:
+        except Exception as e:
+            print(f"Error procesando httpx: {str(e)}")
             # Fallback si no hay datos de httpx
             subs = [{"url": u, "status": 200, "tech": ["N/D"]} for u in raw_subs[:25]]
-    except:
+    except Exception as e:
+        print(f"Error cargando subdominios: {str(e)}")
         raw_subs = []
         subs = []
     
     # Vulnerabilidades (Nuclei)
     try:
         with open(results['nuclei']) as f:
-            raw_nuclei = json.load(f)
+            content = f.read().strip()
+            if not content:  # Verificar que el archivo no esté vacío
+                raw_nuclei = []
+            else:
+                raw_nuclei = json.loads(content)
+                # Asegurar que sea una lista
+                if not isinstance(raw_nuclei, list):
+                    print("Advertencia: datos de nuclei no son una lista, convirtiendo")
+                    raw_nuclei = [raw_nuclei] if raw_nuclei else []
         vulns = [{
             "host": n.get("matched-at", ""),
             "template": n.get("template-id", ""),
             "severity": n.get("info", {}).get("severity", "low"),
             "description": n.get("info", {}).get("description", "No disponible")
         } for n in raw_nuclei if n.get("info", {}).get("severity") in ["high", "critical"]]
-    except:
+    except Exception as e:
+        print(f"Error procesando nuclei: {str(e)}")
         raw_nuclei = []
         vulns = []
     
     # TLS - Mejor procesamiento del resultado de testssl.sh
     try:
         with open(results['tls']) as f:
-            tls_data = json.load(f)
+            content = f.read().strip()
+            if not content:  # Verificar que el archivo no esté vacío
+                raise ValueError("Archivo TLS vacío")
+            tls_data = json.loads(content)
             
         # Verificar si es el formato de fallback o el formato real de testssl.sh
         if "error" in tls_data and "scanResult" in tls_data:
@@ -370,7 +480,10 @@ def build_pdf(domain, tmp_dir, results):
     # Credenciales filtradas - Manejar nuevo formato JSON
     try:
         with open(results['leaks']) as f:
-            leaks_data = json.load(f)
+            content = f.read().strip()
+            if not content:  # Verificar que el archivo no esté vacío
+                raise ValueError("Archivo leaks vacío")
+            leaks_data = json.loads(content)
             
         # Comprobar si es el nuevo formato (con estructura domain y resultados)
         if isinstance(leaks_data, dict) and 'resultados' in leaks_data:
@@ -403,7 +516,10 @@ def build_pdf(domain, tmp_dir, results):
         if results.get("typosquats_json") and os.path.exists(results["typosquats_json"]):
             # Usar el archivo JSON que es más estructurado
             with open(results["typosquats_json"]) as f:
-                typo_data = json.load(f)
+                content = f.read().strip()
+                if not content:  # Verificar que el archivo no esté vacío
+                    raise ValueError("Archivo typosquats_json vacío")
+                typo_data = json.loads(content)
                 
             # Filtrar solo dominios activos (con DNS A o MX configurados)
             active_typos = [t for t in typo_data if t.get("dns_a") or t.get("dns_mx")]
@@ -418,6 +534,11 @@ def build_pdf(domain, tmp_dir, results):
             typos = []
             try:
                 with open(results["typosquats"], 'r') as f:
+                    content = f.read().strip()
+                    if not content:  # Verificar que el archivo no esté vacío
+                        raise ValueError("Archivo typosquats CSV vacío")
+                    # Reiniciar el puntero del archivo para leer desde el principio
+                    f.seek(0)
                     reader = csv.DictReader(f)
                     for row in reader:
                         # Verificar si el dominio tiene DNS configurado
@@ -465,9 +586,14 @@ def build_pdf(domain, tmp_dir, results):
     if not template_path.exists():
         print(f"ERROR: La plantilla no existe en {template_path}")
         # Crear una plantilla básica como fallback
-        with open(template_path, "w") as f:
-            f.write("<!DOCTYPE html><html><body><h1>Informe de seguridad - {{domain}}</h1><p>Generado el {{now}}</p></body></html>")
-        print("Se ha creado una plantilla básica como fallback")
+        try:
+            os.makedirs(TEMPL_PATH, exist_ok=True)
+            with open(template_path, "w") as f:
+                f.write("<!DOCTYPE html><html><body><h1>Informe de seguridad - {{domain}}</h1><p>Generado el {{now}}</p></body></html>")
+            print("Se ha creado una plantilla básica como fallback")
+        except Exception as e:
+            print(f"ERROR al crear plantilla fallback: {e}")
+            # Continuar con una plantilla en memoria
     else:
         print(f"Plantilla encontrada en {template_path}")
     
@@ -506,11 +632,21 @@ def build_pdf(domain, tmp_dir, results):
         except Exception as e2:
             print(f"ERROR al generar el PDF fallback con reportlab: {e2}")
             # Último recurso: crear un archivo de texto
-            with open(str(pdf_path), 'w') as f:
-                f.write(f"Informe de seguridad - {domain}\n")
-                f.write(f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
-                f.write(f"Se encontraron {len(subs)} subdominios y {len(vulns)} vulnerabilidades.\n")
-            print("Se ha creado un archivo de texto como último recurso")
+            try:
+                with open(str(pdf_path), 'w') as f:
+                    f.write(f"Informe de seguridad - {domain}\n")
+                    f.write(f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+                    f.write(f"Se encontraron {len(subs)} subdominios y {len(vulns)} vulnerabilidades.\n")
+                print("Se ha creado un archivo de texto como último recurso")
+            except Exception as e3:
+                print(f"ERROR al crear archivo de texto: {e3}")
+                # Si todo falla, devolver la ruta aunque no exista el archivo
+    
+    # Verificar que el archivo existe
+    if not os.path.exists(pdf_path):
+        print(f"ADVERTENCIA: El archivo PDF no existe en la ruta: {pdf_path}")
+    elif os.path.getsize(pdf_path) == 0:
+        print(f"ADVERTENCIA: El archivo PDF está vacío: {pdf_path}")
     
     return pdf_path
 
@@ -526,10 +662,23 @@ def send_notification(email, pdf_path, domain, results=None):
         print("MAILERSEND_API_KEY no definido")
         return False
 
+    # Verificar que el PDF existe y es accesible
+    if not os.path.exists(pdf_path):
+        print(f"Error: El archivo PDF no existe en la ruta: {pdf_path}")
+        return False
+        
+    if os.path.getsize(pdf_path) == 0:
+        print(f"Error: El archivo PDF está vacío: {pdf_path}")
+        return False
+
     # Leer el PDF y codificarlo en base64
     try:
         with open(pdf_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
+            pdf_content = f.read()
+            if len(pdf_content) == 0:
+                print(f"Error: El archivo PDF está vacío aunque existe: {pdf_path}")
+                return False
+            encoded = base64.b64encode(pdf_content).decode()
     except Exception as e:
         print(f"Error leyendo PDF: {str(e)}")
         encoded = None
@@ -550,25 +699,39 @@ def send_notification(email, pdf_path, domain, results=None):
     if results:
         try:
             # Contar subdominios
+            subdomains_count = "N/D"
             try:
-                with open(results.get('subdomains', ''), 'r') as f:
-                    subdomains_count = len([line for line in f if line.strip()])
-            except:
-                subdomains_count = "N/D"
+                if os.path.exists(results.get('subdomains', '')):
+                    with open(results.get('subdomains', ''), 'r') as f:
+                        subdomains_count = len([line for line in f if line.strip()])
+            except Exception as e:
+                print(f"Error contando subdominios: {str(e)}")
                 
             # Contar vulnerabilidades
+            vulns_count = "N/D"
             try:
-                with open(results.get('nuclei', ''), 'r') as f:
-                    nuclei_data = json.load(f)
-                    vulns_count = len(nuclei_data)
-            except:
-                vulns_count = "N/D"
+                if os.path.exists(results.get('nuclei', '')):
+                    with open(results.get('nuclei', ''), 'r') as f:
+                        content = f.read().strip()
+                        if content:
+                            try:
+                                nuclei_data = json.loads(content)
+                                if isinstance(nuclei_data, list):
+                                    vulns_count = len(nuclei_data)
+                                else:
+                                    vulns_count = 0
+                            except json.JSONDecodeError:
+                                print("Error decodificando JSON de nuclei")
+                                vulns_count = 0
+            except Exception as e:
+                print(f"Error contando vulnerabilidades: {str(e)}")
                 
             email_body += f"""<ul style='list-style-type: none; padding-left: 0;'>
                 <li style='margin-bottom: 10px;'><strong>🔍 Subdominios encontrados:</strong> {subdomains_count}</li>
                 <li><strong>⚠️ Vulnerabilidades detectadas:</strong> {vulns_count} (críticas/altas)</li>
             </ul>"""
         except Exception as e:
+            print(f"Error generando resumen del escaneo: {str(e)}")
             email_body += f"<p>No se pudo generar el resumen del escaneo: {str(e)}</p>"
     
     email_body += """</div>
@@ -594,18 +757,47 @@ def send_notification(email, pdf_path, domain, results=None):
             "content":  encoded,
             "disposition": "attachment"
         }]
+    else:
+        print("ADVERTENCIA: No se pudo adjuntar el PDF al email")
 
-    r = requests.post(
-        "https://api.mailersend.com/v1/email",
-        json=payload,
-        headers={"Authorization": f"Bearer {key}",
-                 "Content-Type": "application/json"},
-        timeout=20
-    )
+    # Intentar enviar el email con reintentos
+    max_retries = 3
+    retry_delay = 5  # segundos
+    
+    for attempt in range(1, max_retries + 1):
+        try:
+            r = requests.post(
+                "https://api.mailersend.com/v1/email",
+                json=payload,
+                headers={"Authorization": f"Bearer {key}",
+                         "Content-Type": "application/json"},
+                timeout=30  # Aumentar timeout para archivos grandes
+            )
 
-    ok = r.status_code == 202
-    print("MailerSend:", r.status_code, r.text[:120])
-    return ok
+            ok = r.status_code == 202
+            print(f"MailerSend (intento {attempt}/{max_retries}):", r.status_code, r.text[:120])
+            
+            if ok:
+                return True
+            elif attempt < max_retries:
+                print(f"Reintentando en {retry_delay} segundos...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Backoff exponencial
+            else:
+                print(f"Todos los intentos de envío fallaron. Último código: {r.status_code}")
+                return False
+                
+        except requests.RequestException as e:
+            print(f"Error de conexión en intento {attempt}/{max_retries}: {str(e)}")
+            if attempt < max_retries:
+                print(f"Reintentando en {retry_delay} segundos...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Backoff exponencial
+            else:
+                print("Todos los intentos de conexión fallaron")
+                return False
+    
+    return False  # No debería llegar aquí, pero por si acaso
 
 # Función principal que ejecuta todo el proceso
 def generate_pdf(domain, email):
@@ -620,6 +812,14 @@ def generate_pdf(domain, email):
     try:
         # 1-6  ────────────── pipeline ────────────── 
         subs_path   = recon(domain, tmp_dir)
+        
+        # Verificar que se generó el archivo de subdominios
+        if not os.path.exists(subs_path) or os.path.getsize(subs_path) == 0:
+            print(f"ADVERTENCIA: No se encontraron subdominios para {domain}")
+            # Crear un archivo con al menos el dominio principal para continuar
+            with open(subs_path, 'w') as f:
+                f.write(f"{domain}\n")
+        
         httpx_path  = fingerprint(subs_path, tmp_dir)
         nuclei_path = nuclei_scan(httpx_path, tmp_dir)
         tls_path    = tls_scan(domain, tmp_dir)
@@ -644,14 +844,54 @@ def generate_pdf(domain, email):
             "typosquats_json": typo_json_path,
         }
         
+        # Verificar que todos los archivos de resultados existen
+        missing_files = []
+        for key, file_path in results.items():
+            if not file_path or not os.path.exists(file_path):
+                print(f"ADVERTENCIA: Archivo de resultados no encontrado: {key} -> {file_path}")
+                missing_files.append(key)
+        
+        if missing_files:
+            print(f"ADVERTENCIA: Faltan {len(missing_files)} archivos de resultados: {', '.join(missing_files)}")
+        
         # Generar PDF
         pdf_path = build_pdf(domain, tmp_dir, results)
+        
+        # Verificar que el PDF se generó correctamente
+        if not os.path.exists(pdf_path) or os.path.getsize(pdf_path) == 0:
+            print(f"ERROR: No se pudo generar el PDF en {pdf_path} o está vacío")
+            # Intentar generar un informe de texto básico como último recurso
+            txt_path = f"{tmp_dir}/{domain}_informe_basico.txt"
+            try:
+                with open(txt_path, 'w') as f:
+                    f.write(f"Informe de seguridad básico para {domain}\n")
+                    f.write(f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+                    f.write("No se pudo generar el informe PDF completo.\n")
+                pdf_path = txt_path
+                print(f"Se ha creado un informe básico en texto: {txt_path}")
+            except Exception as e2:
+                print(f"ERROR al crear informe básico: {str(e2)}")
         
         # Ya no subimos a S3, solo guardamos la ruta local
         report_path = upload_to_s3(pdf_path, domain)
         
         # Enviar notificación con el PDF adjunto (MailerSend) y resumen en el cuerpo
         ok_email = send_notification(email, pdf_path, domain, results)
+        
+        if not ok_email:
+            print(f"ADVERTENCIA: No se pudo enviar el email a {email}")
+            # Intentar reenviar con un informe básico si el original falló
+            if os.path.exists(pdf_path) and pdf_path.endswith('.pdf'):
+                txt_path = f"{tmp_dir}/{domain}_informe_basico.txt"
+                try:
+                    with open(txt_path, 'w') as f:
+                        f.write(f"Informe de seguridad básico para {domain}\n")
+                        f.write(f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+                        f.write("El informe PDF completo no pudo ser enviado por email.\n")
+                    print(f"Reintentando envío con informe básico: {txt_path}")
+                    ok_email = send_notification(email, txt_path, domain, results)
+                except Exception as e2:
+                    print(f"ERROR al crear y enviar informe básico: {str(e2)}")
         
         print(f"✅ Escaneo completo para {domain}")
         print(f"📊 Informe generado en: {pdf_path}")
@@ -666,9 +906,34 @@ def generate_pdf(domain, email):
 
     except Exception as e:
         print("❌ Error durante el escaneo:", e)
+        # Intentar generar un informe de error
+        error_path = f"{tmp_dir}/{domain}_error_report.txt"
+        try:
+            with open(error_path, 'w') as f:
+                f.write(f"Informe de error para {domain}\n")
+                f.write(f"Generado el {dt.datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+                f.write(f"Error durante el proceso de escaneo: {str(e)}\n")
+            
+            # Intentar enviar notificación de error
+            try:
+                send_notification(email, error_path, domain, {'error': str(e)})
+            except Exception as e2:
+                print(f"No se pudo enviar notificación de error: {str(e2)}")
+        except Exception as e2:
+            print(f"No se pudo generar informe de error: {str(e2)}")
+            
         return {"status":"error","domain":domain,"email":email,"error":str(e)}
     finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)   # limpia /tmp
+        # Mantener los archivos por un tiempo para depuración si hay errores
+        try:
+            if 'status' in locals() and locals().get('status') == 'error':
+                print(f"Manteniendo archivos temporales para depuración en: {tmp_dir}")
+            else:
+                shutil.rmtree(tmp_dir, ignore_errors=True)   # limpia /tmp
+        except Exception as e:
+            print(f"Error al limpiar directorio temporal: {str(e)}")
+            # Intentar limpiar de todos modos
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 # Punto de entrada para el worker
 if __name__ == "__main__":
