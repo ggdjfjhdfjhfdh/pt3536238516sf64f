@@ -540,10 +540,22 @@ def build_pdf(domain, tmp_dir, results):
     
     from jinja2 import Environment, FileSystemLoader
     
-    # La plantilla se busca en el directorio de trabajo actual
-    template_path = os.path.join(os.path.dirname(__file__), 'templates')
-    env = Environment(loader=FileSystemLoader(template_path))
-    template = env.get_template('report.html')
+    # Buscar la plantilla en múltiples ubicaciones posibles
+    template_dirs = [
+        os.path.join(os.path.dirname(__file__), 'templates'),  # Directorio actual/templates
+        '/app/templates',                                      # Directorio en Docker
+        os.path.join(os.path.dirname(__file__))                # Directorio actual
+    ]
+    
+    # Intentar cargar la plantilla desde las ubicaciones disponibles
+    for template_path in template_dirs:
+        if os.path.exists(os.path.join(template_path, 'report.html')):
+            env = Environment(loader=FileSystemLoader(template_path))
+            template = env.get_template('report.html')
+            print(f"Plantilla encontrada en: {template_path}")
+            break
+    else:
+        raise FileNotFoundError(f"No se encontró la plantilla report.html en ninguna ubicación: {template_dirs}")
 
     # ───────────────── Preparación del contexto para Jinja2 ──────────────────
 

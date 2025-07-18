@@ -23,13 +23,10 @@ ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
 # Instalar herramientas de reconocimiento
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest \
     && go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest \
-    && go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest \
     && go install -v github.com/owasp-amass/amass/v3/...@master
 
-# Instalar testssl.sh
-RUN git clone --depth 1 https://github.com/drwetter/testssl.sh.git /opt/testssl \
-    && chmod +x /opt/testssl/testssl.sh \
-    && ln -s /opt/testssl/testssl.sh /usr/local/bin/testssl.sh
+# Instalar hexdump (necesario para algunas operaciones)
+RUN apt-get update && apt-get install -y bsdextrautils && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Instalar dnstwist
 RUN pip install --no-cache-dir dnstwist
@@ -42,10 +39,14 @@ WORKDIR /app
 # Copiar requirements.txt y instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir mailersend==0.6.0 pyhibp reportlab
+    && pip install --no-cache-dir mailersend==0.6.0
 
-# Copiar código de la aplicación
+# Crear directorio para templates
+RUN mkdir -p /app/templates
+
+# Copiar código de la aplicación y templates
 COPY run_scan.py .
+COPY workers/scan-runner/templates/ /app/templates/
 
 # Crear directorio para resultados temporales
 RUN mkdir -p /tmp/scan_results

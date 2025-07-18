@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Informe de seguridad – {{ domain }}</title>
+  <style>
+    @page {
+        margin: 2.5cm 1.5cm;
+        font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+        @top-center { content: element(header); }
+        @bottom-center { content: element(footer); }
+    }
+    body {
+        color: #333;
+    }
+    header {
+        position: running(header);
+        text-align: right;
+        font-size: 10px;
+        color: #888;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    footer {
+        position: running(footer);
+        text-align: center;
+        font-size: 10px;
+        color: #888;
+        border-top: 1px solid #eee;
+        padding-top: 10px;
+    }
+    h1 {
+        font-size: 28px;
+        color: #1a237e;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #1a237e;
+        padding-bottom: 5px;
+    }
+    h2 {
+        font-size: 20px;
+        margin-top: 1.2cm;
+        color: #1a237e;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 3px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.5cm;
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        font-size: 12px;
+        text-align: left;
+    }
+    th {
+        background-color: #f0f2ff;
+        font-weight: bold;
+    }
+    .sev-critical {
+        background-color: #f8d7da; /* Rojo más oscuro */
+        color: #721c24;
+    }
+    .sev-high {
+        background-color: #f8d7da; /* Rojo */
+        color: #721c24;
+    }
+    .sev-medium {
+        background-color: #fff3cd; /* Amarillo */
+        color: #856404;
+    }
+    .sev-low {
+        background-color: #d4edda; /* Verde */
+        color: #155724;
+    }
+    .sev-info {
+        background-color: #d1ecf1; /* Azul claro */
+        color: #0c5460;
+    }
+    .summary-box {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 5px;
+    }
+    .summary-box ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    .summary-box li {
+        margin-bottom: 10px;
+    }
+    .logo {
+        float: left;
+        font-size: 24px;
+        font-weight: bold;
+        color: #1a237e;
+    }
+    .report-title {
+        text-align: right;
+    }
+    .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="clearfix">
+    <div class="logo">Pentest Express</div>
+    <div class="report-title">
+      <h1>Informe de Seguridad<br>{{ domain }}</h1>
+      <p style="color: #666; font-size: 12px;">Generado el {{ now }}</p>
+    </div>
+  </div>
+</header>
+
+<div class="summary-box">
+  <h2>Resumen Ejecutivo</h2>
+  <ul>
+    <li><strong>🔍 Subdominios:</strong> {{ summary.subdomains }} identificados y analizados</li>
+    <li><strong>⚠️ Vulnerabilidades:</strong> {{ summary.vulns }} hallazgos críticos/altos detectados por Nuclei</li>
+    <li><strong>🔒 Configuración TLS:</strong> {{ summary.tls }}</li>
+    <li><strong>🔑 Credenciales:</strong> {{ summary.leaks }}</li>
+  </ul>
+</div>
+
+<h2>Subdominios vivos</h2>
+<table>
+  <thead><tr><th>#</th><th>Host</th><th>Status</th><th>Tecnologías</th></tr></thead>
+  <tbody>
+  {% for s in subs %}
+    <tr><td>{{ loop.index }}</td><td>{{ s.url }}</td><td>{{ s.status }}</td><td>{{ ", ".join(s.tech) }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Vulnerabilidades Críticas y Altas (Nuclei)</h2>
+{% if vulns %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Host</th>
+        <th>Plantilla</th>
+        <th>Severidad</th>
+        <th>Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vulns %}
+        <tr class="sev-{{ v.severity|lower }}">
+          <td>{{ loop.index }}</td>
+          <td>{{ v.host }}</td>
+          <td>{{ v.template }}</td>
+          <td>{{ v.severity|upper }}</td>
+          <td>{{ v.description|default('No disponible', true) }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>✅ No se encontraron vulnerabilidades de criticidad alta o crítica.</p>
+{% endif %}
+
+<h2>Dominios de Typosquatting Relevantes</h2>
+{% if typos %}
+  <p>Se han detectado dominios que podrían ser utilizados para ataques de phishing. Se recomienda su registro para proteger la marca.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Dominio Detectado</th>
+        <th>Tipo de Mutación</th>
+        <th>Registros DNS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in typos[:15] %}
+        <tr>
+          <td>{{ t.domain }}</td>
+          <td>{{ t.fuzzer }}</td>
+          <td>
+            {% if t.dns_a %}<strong>A:</strong> {{ t.dns_a|join(', ') }}{% endif %}
+            {% if t.dns_mx %}<strong>MX:</strong> {{ t.dns_mx|join(', ') }}{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>✅ No se encontraron dominios de typosquatting relevantes.</p>
+{% endif %}
+
+<footer>
+  <p>Pentest Express · Informe confidencial generado para {{ domain }}</p>
+  <p>Este informe es automático y no reemplaza una auditoría manual. Contacte con nosotros para un análisis en profundidad.</p>
+</footer>
+</body>
+</html>
