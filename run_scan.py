@@ -197,19 +197,29 @@ def tls_scan(domain, tmp_dir):
         }
         
         # Verificar los protocolos TLS soportados
-        protocols_to_test = [
-            ssl.PROTOCOL_TLSv1,
-            ssl.PROTOCOL_TLSv1_1,
-            ssl.PROTOCOL_TLSv1_2,
-            ssl.PROTOCOL_TLSv1_3
-        ]
+        # Verificar qué protocolos están disponibles en esta versión de Python
+        protocols_to_test = []
+        protocol_names = {}
         
-        protocol_names = {
-            ssl.PROTOCOL_TLSv1: "TLSv1.0",
-            ssl.PROTOCOL_TLSv1_1: "TLSv1.1",
-            ssl.PROTOCOL_TLSv1_2: "TLSv1.2",
-            ssl.PROTOCOL_TLSv1_3: "TLSv1.3"
-        }
+        # TLSv1.0
+        if hasattr(ssl, 'PROTOCOL_TLSv1'):
+            protocols_to_test.append(ssl.PROTOCOL_TLSv1)
+            protocol_names[ssl.PROTOCOL_TLSv1] = "TLSv1.0"
+        
+        # TLSv1.1
+        if hasattr(ssl, 'PROTOCOL_TLSv1_1'):
+            protocols_to_test.append(ssl.PROTOCOL_TLSv1_1)
+            protocol_names[ssl.PROTOCOL_TLSv1_1] = "TLSv1.1"
+        
+        # TLSv1.2
+        if hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+            protocols_to_test.append(ssl.PROTOCOL_TLSv1_2)
+            protocol_names[ssl.PROTOCOL_TLSv1_2] = "TLSv1.2"
+        
+        # TLSv1.3 (puede no estar disponible en todas las versiones)
+        if hasattr(ssl, 'PROTOCOL_TLSv1_3'):
+            protocols_to_test.append(ssl.PROTOCOL_TLSv1_3)
+            protocol_names[ssl.PROTOCOL_TLSv1_3] = "TLSv1.3"
         
         for protocol in protocols_to_test:
             try:
@@ -223,7 +233,13 @@ def tls_scan(domain, tmp_dir):
                         })
                         
                         # Si es TLSv1.0 o TLSv1.1 (obsoletos), añadir como problema
-                        if protocol in [ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_1]:
+                        obsolete_protocols = []
+                        if hasattr(ssl, 'PROTOCOL_TLSv1'):
+                            obsolete_protocols.append(ssl.PROTOCOL_TLSv1)
+                        if hasattr(ssl, 'PROTOCOL_TLSv1_1'):
+                            obsolete_protocols.append(ssl.PROTOCOL_TLSv1_1)
+                        
+                        if protocol in obsolete_protocols:
                             results["tls_issues"].append({
                                 "severity": "high",
                                 "finding": f"Protocolo obsoleto {protocol_names.get(protocol)} soportado",
@@ -523,15 +539,34 @@ def build_pdf(domain, tmp_dir, results):
     # 5. Dominios de typosquatting
     typosquatting_domains = []
     try:
-        with open(results['typosquats'], 'r') as f:
-            # Usar pandas para leer el CSV y convertirlo a dict
-            import pandas as pd
-            df = pd.read_csv(f)
+        import pandas as pd
+        import csv
+        
+        # Intentar leer con pandas primero
+        try:
+            df = pd.read_csv(results['typosquats'])
             # Filtrar solo dominios con registros DNS (potencialmente activos)
             active_typos = df[df['dns-a'].notna() | df['dns-aaaa'].notna() | df['dns-mx'].notna()]
             typosquatting_domains = active_typos.to_dict('records')
+        except Exception as pandas_error:
+            print(f"Error con pandas, intentando con csv: {pandas_error}")
+            # Fallback con csv estándar
+            with open(results['typosquats'], 'r') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    # Verificar si el dominio tiene DNS configurado
+                    if row.get('dns-a') or row.get('dns-aaaa') or row.get('dns-mx'):
+                        typosquatting_domains.append({
+                            'domain-name': row.get('domain-name', ''),
+                            'fuzzer': row.get('fuzzer', ''),
+                            'dns-a': row.get('dns-a', ''),
+                            'dns-mx': row.get('dns-mx', '')
+                        })
+                    if len(typosquatting_domains) >= 20:  # limitar resultados
+                        break
     except (FileNotFoundError, Exception) as e:
         print(f"No se pudo procesar el archivo de typosquatting: {e}")
+        typosquatting_domains = []
 
     # ───────────────── Renderizado del HTML ──────────────────
     

@@ -12,10 +12,13 @@ RUN apt-get update && \
         curl wget git ca-certificates build-essential \
         bsdmainutils dnsutils hexdump \
     \
-    # ───── dependencias para WeasyPrint ───── 
+    # ───── dependencias para WeasyPrint y GObject ───── 
     && apt-get install -y --no-install-recommends \
-        libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 \
+        libgobject-2.0-0 libgobject-2.0-dev libgirepository-1.0-1 \
+        gir1.2-glib-2.0 libcairo2 libfontconfig1 \
         libjpeg62-turbo libgif7 libpng16-16 \
+        libfribidi0 libxml2 libxslt1.1 \
     \
     # ───── herramientas de seguridad ───── 
     && wget -qO /usr/local/bin/httpx      https://github.com/projectdiscovery/httpx/releases/download/v1.6.3/httpx_1.6.3_linux_amd64  && chmod +x /usr/local/bin/httpx \

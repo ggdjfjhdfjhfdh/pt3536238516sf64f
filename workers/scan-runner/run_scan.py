@@ -9,6 +9,7 @@ import requests
 import re
 import shutil
 import pandas as pd
+import warnings
 from pathlib import Path
 from rq import Queue, Worker
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -17,6 +18,10 @@ from weasyprint import HTML
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
+
+# Suprimir advertencias de SSL no verificado (normales en pentesting)
+from urllib3.exceptions import InsecureRequestWarning
+warnings.filterwarnings('ignore', category=InsecureRequestWarning)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 q = Queue("scans", connection=redis.from_url(REDIS_URL))
@@ -409,12 +414,25 @@ def build_pdf(domain, tmp_dir, results):
             typos = active_typos[:20]
         else:
             # Fallback al CSV
-            with open(results["typosquats"]) as f:
-                csv_lines = f.read().splitlines()[1:30]  # primeras 30 líneas sin cabecera
-                
-            # Filtrar solo dominios activos (con DNS A o MX configurados)
-            active_typos = [line for line in csv_lines if ",,,,," not in line]  # líneas con datos DNS
-            typos = active_typos[:20]  # limitar a 20 resultados
+            import csv
+            typos = []
+            try:
+                with open(results["typosquats"], 'r') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        # Verificar si el dominio tiene DNS configurado
+                        if row.get('dns-a') or row.get('dns-aaaa') or row.get('dns-mx'):
+                            typos.append({
+                                'domain': row.get('domain-name', ''),
+                                'fuzzer': row.get('fuzzer', ''),
+                                'dns_a': row.get('dns-a', ''),
+                                'dns_mx': row.get('dns-mx', '')
+                            })
+                        if len(typos) >= 20:  # limitar a 20 resultados
+                            break
+            except Exception as csv_error:
+                print(f"Error procesando CSV de dnstwist: {csv_error}")
+                typos = []
     except Exception as e:
         print(f"Error procesando typosquatting: {str(e)}")
         typos = []
