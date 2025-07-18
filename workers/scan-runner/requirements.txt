@@ -1,8 +1,8 @@
 rq==2.4.0
 redis==5.0.4
-reportlab==4.2.0
-pyhibp==0.0.18
 requests==2.32.3
 weasyprint==62.2
 Jinja2==3.1.4
 pandas==2.2.2
+cryptography==42.0.5
+python-dateutil==2.9.0
