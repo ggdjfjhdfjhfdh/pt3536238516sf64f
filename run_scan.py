@@ -125,6 +125,10 @@ def nuclei_scan(live_json, tmp_dir):
             
             # 2. Verificar cabeceras de seguridad básicas
             try:
+                # Suprimir advertencias específicas de InsecureRequestWarning para esta llamada
+                import urllib3
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                
                 response = requests.get(host, timeout=5, verify=False, allow_redirects=True)
                 headers = response.headers
                 
@@ -260,27 +264,32 @@ def tls_scan(domain, tmp_dir):
                     cert_bin = ssock.getpeercert(binary_form=True)
                     cert = x509.load_der_x509_certificate(cert_bin, default_backend())
                     
-                    # Extraer información básica del certificado
+                    # Extraer información básica del certificado usando propiedades recomendadas
+                    # Usar las propiedades recomendadas en lugar de las obsoletas
+                    not_valid_before = cert.not_valid_before_utc if hasattr(cert, 'not_valid_before_utc') else cert.not_valid_before
+                    not_valid_after = cert.not_valid_after_utc if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after
+                    
                     results["certificate"] = {
                         "subject": str(cert.subject),
                         "issuer": str(cert.issuer),
-                        "not_valid_before": cert.not_valid_before.isoformat(),
-                        "not_valid_after": cert.not_valid_after.isoformat(),
+                        "not_valid_before": not_valid_before.isoformat(),
+                        "not_valid_after": not_valid_after.isoformat(),
                         "serial_number": cert.serial_number
                     }
                     
                     # Verificar fecha de expiración
-                    if cert.not_valid_after < datetime.now():
+                    now = datetime.now()
+                    if not_valid_after < now:
                         results["tls_issues"].append({
                             "severity": "critical",
                             "finding": "Certificado expirado",
-                            "description": f"El certificado expiró el {cert.not_valid_after.strftime('%Y-%m-%d')}"
+                            "description": f"El certificado expiró el {not_valid_after.strftime('%Y-%m-%d')}"
                         })
-                    elif (cert.not_valid_after - datetime.now()).days < 30:
+                    elif (not_valid_after - now).days < 30:
                         results["tls_issues"].append({
                             "severity": "high",
                             "finding": "Certificado próximo a expirar",
-                            "description": f"El certificado expirará el {cert.not_valid_after.strftime('%Y-%m-%d')}"
+                            "description": f"El certificado expirará el {not_valid_after.strftime('%Y-%m-%d')}"
                         })
         except Exception as e:
             results["certificate"] = {"error": str(e)}

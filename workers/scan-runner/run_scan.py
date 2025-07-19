@@ -55,49 +55,281 @@ def sh(cmd, ignore_errors=False, timeout=300):
             raise
         return ""
 
-# 1. Reconocimiento de subdominios
+# 1. Reconocimiento de subdominios mejorado
 def recon(domain, tmp_dir):
-    print(f"[1/7] Iniciando reconocimiento para {domain}...")
+    print(f"[1/7] Iniciando reconocimiento avanzado para {domain}...")
     subs_path = f"{tmp_dir}/subdomains.txt"
+    all_subs = set()
     
+    # Método 1: DNS bruteforce con nombres comunes
+    print("Método 1: DNS bruteforce con nombres comunes")
+    common_subdomains = [
+        "www", "mail", "remote", "blog", "webmail", "server", "ns1", "ns2", 
+        "smtp", "secure", "vpn", "m", "shop", "ftp", "mail2", "test", "portal", 
+        "dns", "host", "mail1", "mx", "support", "dev", "web", "api", "cdn", 
+        "app", "proxy", "admin", "news", "connect", "helpdesk", "intranet", 
+        "gateway", "exchange", "cp", "cloud", "auth", "legacy", "mobile", "forum",
+        "beta", "stage", "pruebas", "desarrollo", "soporte", "tienda", "clientes"
+    ]
+    
+    for sub in common_subdomains:
+        all_subs.add(f"{sub}.{domain}")
+    
+    # Método 2: Certificados SSL/TLS (crt.sh)
+    print("Método 2: Búsqueda en certificados SSL/TLS (crt.sh)")
+    try:
+        import requests
+        url = f"https://crt.sh/?q=%.{domain}&output=json"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                for entry in data:
+                    name = entry.get('name_value', '').lower()
+                    # Filtrar wildcards y dominios no válidos
+                    if name and '*' not in name and name.endswith(domain):
+                        all_subs.add(name)
+                print(f"Encontrados {len(data)} certificados en crt.sh")
+            except Exception as e:
+                print(f"Error procesando datos de crt.sh: {str(e)}")
+    except Exception as e:
+        print(f"Error consultando crt.sh: {str(e)}")
+    
+    # Método 3: Búsqueda en DNS públicos
+    print("Método 3: Búsqueda en DNS públicos")
+    dns_servers = [
+        "8.8.8.8", "1.1.1.1", "9.9.9.9", "208.67.222.222"
+    ]
+    
+    for sub in list(all_subs)[:20]:  # Limitar a 20 para no sobrecargar
+        for dns in dns_servers:
+            try:
+                cmd = f"nslookup {sub} {dns}"
+                result = sh(cmd, ignore_errors=True, timeout=5)
+                # Si hay respuesta positiva, añadir a la lista
+                if "Non-existent domain" not in result and "can't find" not in result:
+                    print(f"✓ Confirmado: {sub} (DNS: {dns})")
+                    break
+            except Exception as e:
+                pass
+    
+    # Método 4: Herramientas externas si están disponibles
     try:
         # Intentar usar amass si está instalado
-        subs = sh(f"amass enum -passive -d {domain} -o -")
-    except:
-        print("Amass no disponible, usando método alternativo")
-        subs = ""
+        amass_result = sh(f"amass enum -passive -d {domain} -o -", ignore_errors=True)
+        if amass_result:
+            print("Amass ejecutado correctamente")
+            for line in amass_result.splitlines():
+                if line.strip():
+                    all_subs.add(line.strip())
+    except Exception as e:
+        print(f"Amass no disponible: {str(e)}")
     
     try:
         # Intentar usar subfinder si está instalado
-        subs += sh(f"subfinder -d {domain} -silent")
-    except:
-        print("Subfinder no disponible, usando método alternativo")
-        # Fallback básico si las herramientas no están disponibles
-        subs += f"www.{domain}\n{domain}\nmail.{domain}\nblog.{domain}"
+        subfinder_result = sh(f"subfinder -d {domain} -silent", ignore_errors=True)
+        if subfinder_result:
+            print("Subfinder ejecutado correctamente")
+            for line in subfinder_result.splitlines():
+                if line.strip():
+                    all_subs.add(line.strip())
+    except Exception as e:
+        print(f"Subfinder no disponible: {str(e)}")
     
+    # Método 5: Búsqueda en archivos históricos (web.archive.org)
+    print("Método 5: Búsqueda en archivos históricos")
+    try:
+        url = f"http://web.archive.org/cdx/search/cdx?url=*.{domain}&output=json&fl=original&collapse=urlkey"
+        response = requests.get(url, timeout=15)
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                if len(data) > 1:  # La primera fila es el encabezado
+                    for entry in data[1:]:  # Saltar el encabezado
+                        try:
+                            # Extraer el subdominio de la URL
+                            from urllib.parse import urlparse
+                            url = entry[0]
+                            hostname = urlparse(url).netloc.lower()
+                            if hostname.endswith(domain):
+                                all_subs.add(hostname)
+                        except Exception:
+                            pass
+                    print(f"Encontrados {len(data)-1} URLs en web.archive.org")
+            except Exception as e:
+                print(f"Error procesando datos de web.archive.org: {str(e)}")
+    except Exception as e:
+        print(f"Error consultando web.archive.org: {str(e)}")
+    
+    # Asegurar que el dominio principal esté incluido
+    all_subs.add(domain)
+    
+    # Guardar todos los subdominios encontrados
+    subs_list = sorted(list(all_subs))
     with open(subs_path, "w") as f:
-        f.write(subs)
+        f.write("\n".join(subs_list))
     
-    print(f"Subdominios encontrados: {subs.count('\n')}")
+    print(f"Subdominios encontrados: {len(subs_list)}")
     return subs_path
 
-# 2. Fingerprinting de hosts activos
+# 2. Fingerprinting avanzado de hosts activos
 def fingerprint(subs_path, tmp_dir):
-    print(f"[2/7] Realizando fingerprinting de hosts...")
+    print(f"[2/7] Realizando fingerprinting avanzado de hosts...")
     httpx_path = f"{tmp_dir}/httpx.json"
     
     try:
         # Intentar usar httpx si está instalado
-        sh(f"httpx -l {subs_path} -json -tech-detect -status-code -o {httpx_path}")
-    except:
-        print("httpx no disponible, usando método alternativo")
-        # Crear un JSON básico si httpx no está disponible
+        sh(f"httpx -l {subs_path} -json -tech-detect -status-code -title -content-length -web-server -o {httpx_path}")
+    except Exception as e:
+        print(f"httpx no disponible ({str(e)}), usando método alternativo")
+        # Implementar un fingerprinting básico con requests
         with open(subs_path, "r") as f:
             domains = f.read().splitlines()
         
+        import requests
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import socket
+        import ssl
+        from urllib.parse import urlparse
+        import re
+        
+        # Función para detectar tecnologías basadas en headers y contenido
+        def detect_tech(headers, content):
+            technologies = []
+            
+            # Detección basada en headers
+            server = headers.get('Server', '')
+            if server:
+                technologies.append(server)
+            
+            # Frameworks comunes
+            if 'X-Powered-By' in headers:
+                technologies.append(headers['X-Powered-By'])
+            
+            if 'WordPress' in content or '/wp-content/' in content or '/wp-includes/' in content:
+                technologies.append('WordPress')
+            
+            if 'Joomla' in content or '/media/jui/' in content:
+                technologies.append('Joomla')
+            
+            if 'Drupal' in content or 'drupal.settings' in content:
+                technologies.append('Drupal')
+            
+            if 'Laravel' in content or 'laravel_session' in headers.get('Set-Cookie', ''):
+                technologies.append('Laravel')
+            
+            if 'Django' in content or 'csrfmiddlewaretoken' in content:
+                technologies.append('Django')
+            
+            # JavaScript frameworks
+            if 'react' in content or 'React.createElement' in content:
+                technologies.append('React')
+            
+            if 'angular' in content or 'ng-app' in content:
+                technologies.append('Angular')
+            
+            if 'vue' in content or 'Vue.js' in content:
+                technologies.append('Vue.js')
+            
+            # CDNs y servicios
+            if 'cloudflare' in headers.get('Server', '').lower() or 'cloudflare' in headers.get('CF-RAY', ''):
+                technologies.append('Cloudflare')
+            
+            if 'akamai' in headers.get('Server', '').lower():
+                technologies.append('Akamai')
+            
+            if 'fastly' in headers.get('Server', '').lower():
+                technologies.append('Fastly')
+            
+            # Extraer título
+            title_match = re.search('<title>(.*?)</title>', content, re.IGNORECASE)
+            title = title_match.group(1) if title_match else 'No title'
+            
+            return technologies, title
+        
+        # Función para escanear un solo dominio
+        def scan_domain(domain):
+            if not domain.strip():
+                return None
+            
+            result = {
+                "url": "",
+                "status_code": 0,
+                "technologies": ["No detectado"],
+                "title": "No disponible",
+                "content_length": 0,
+                "web_server": "Desconocido",
+                "ip": "Desconocido",
+                "ports": []
+            }
+            
+            # Verificar HTTP y HTTPS
+            for protocol in ['https', 'http']:
+                try:
+                    url = f"{protocol}://{domain}"
+                    response = requests.get(url, timeout=10, verify=False, allow_redirects=True)
+                    
+                    # Obtener información básica
+                    result["url"] = response.url
+                    result["status_code"] = response.status_code
+                    result["content_length"] = len(response.content)
+                    result["web_server"] = response.headers.get('Server', 'Desconocido')
+                    
+                    # Detectar tecnologías
+                    techs, title = detect_tech(response.headers, response.text)
+                    if techs:
+                        result["technologies"] = techs
+                    result["title"] = title
+                    
+                    # Obtener IP
+                    try:
+                        parsed_url = urlparse(url)
+                        hostname = parsed_url.netloc
+                        result["ip"] = socket.gethostbyname(hostname)
+                    except Exception:
+                        pass
+                    
+                    # Verificar puertos comunes
+                    common_ports = [80, 443, 8080, 8443]
+                    open_ports = []
+                    for port in common_ports:
+                        try:
+                            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            s.settimeout(1)
+                            s.connect((result["ip"], port))
+                            open_ports.append(port)
+                            s.close()
+                        except Exception:
+                            pass
+                    
+                    result["ports"] = open_ports
+                    
+                    # Si tuvimos éxito, no necesitamos probar el otro protocolo
+                    break
+                    
+                except requests.exceptions.RequestException:
+                    continue
+                except Exception as e:
+                    print(f"Error escaneando {domain}: {str(e)}")
+            
+            return result if result["url"] else None
+        
+        # Escanear dominios en paralelo
         results = []
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_domain = {executor.submit(scan_domain, domain): domain for domain in domains}
+            for future in as_completed(future_to_domain):
+                result = future.result()
+                if result:
+                    results.append(result)
+        
+        # Guardar resultados
+        with open(httpx_path, "w") as f:
+            json.dump(results, f, indent=2)
+        
+        print(f"Fingerprinting completado: {len(results)} hosts activos encontrados")
+        
         for domain in domains:
-            if domain.strip():
                 results.append({
                     "url": f"https://{domain.strip()}",
                     "status_code": 0,
@@ -110,9 +342,9 @@ def fingerprint(subs_path, tmp_dir):
     
     return httpx_path
 
-# 3. Escaneo de vulnerabilidades con nuclei
+# 3. Escaneo avanzado de vulnerabilidades con nuclei y alternativas
 def nuclei_scan(live_json, tmp_dir):
-    print(f"[3/7] Ejecutando escaneo de vulnerabilidades...")
+    print(f"[3/7] Ejecutando escaneo avanzado de vulnerabilidades...")
     nuclei_path = f"{tmp_dir}/nuclei.json"
     
     # Validar que el archivo de entrada no esté vacío
@@ -122,51 +354,243 @@ def nuclei_scan(live_json, tmp_dir):
             json.dump([], f)
         return nuclei_path
     
+    # Extraer URLs del archivo JSON de httpx
+    urls = []
+    try:
+        with open(live_json, "r") as f:
+            data = json.load(f)
+            for item in data:
+                if isinstance(item, dict) and "url" in item:
+                    urls.append(item["url"])
+    except Exception as e:
+        print(f"Error extrayendo URLs de {live_json}: {str(e)}")
+        # Crear un archivo temporal con las URLs
+    
+    if not urls:
+        print("No se encontraron URLs para escanear")
+        with open(nuclei_path, "w") as f:
+            json.dump([], f)
+        return nuclei_path
+    
+    # Guardar URLs en un archivo temporal para nuclei
+    urls_file = f"{tmp_dir}/urls_to_scan.txt"
+    with open(urls_file, "w") as f:
+        f.write("\n".join(urls))
+    
+    # Resultados combinados de todos los métodos
+    all_results = []
+    
+    # Método 1: Nuclei (si está disponible)
     try:
         # Verificar que nuclei esté instalado
         version_check = sh("nuclei -version", ignore_errors=True)
         if version_check:
-            # Usar parámetros más robustos para nuclei
-            sh(f"nuclei -l {live_json} -severity high,critical -json -o {nuclei_path} -timeout 5 -retries 2", ignore_errors=True, timeout=600)  # 10 min timeout para nuclei
+            print("Ejecutando Nuclei con plantillas de seguridad web...")
+            # Usar parámetros más robustos para nuclei, incluyendo más severidades
+            sh(f"nuclei -l {urls_file} -severity low,medium,high,critical -json -o {nuclei_path} -timeout 10 -retries 2 -rate-limit 150", ignore_errors=True, timeout=900)  # 15 min timeout
             
             # Verificar que el archivo de resultados se haya creado correctamente
-            if not os.path.exists(nuclei_path) or os.path.getsize(nuclei_path) == 0:
-                print("Nuclei no generó resultados, creando archivo JSON vacío")
-                with open(nuclei_path, "w") as f:
-                    json.dump([], f)
+            if os.path.exists(nuclei_path) and os.path.getsize(nuclei_path) > 0:
+                try:
+                    with open(nuclei_path, "r") as f:
+                        content = f.read().strip()
+                        if content:
+                            # Cargar resultados de nuclei
+                            try:
+                                nuclei_results = json.loads(content)
+                                if isinstance(nuclei_results, list):
+                                    all_results.extend(nuclei_results)
+                                    print(f"Nuclei encontró {len(nuclei_results)} vulnerabilidades")
+                                else:
+                                    all_results.append(nuclei_results)
+                                    print("Nuclei encontró 1 vulnerabilidad")
+                            except json.JSONDecodeError:
+                                print("El archivo de resultados de nuclei no es un JSON válido")
+                except Exception as e:
+                    print(f"Error procesando resultados de nuclei: {str(e)}")
+            else:
+                print("Nuclei no generó resultados")
         else:
-            raise Exception("Nuclei no está instalado o no es accesible")
+            print("Nuclei no está instalado o no es accesible")
     except Exception as e:
         print(f"Error con nuclei: {str(e)}")
-        print("Creando archivo de resultados vacío para nuclei")
-        # Crear un JSON vacío si nuclei no está disponible o falla
-        with open(nuclei_path, "w") as f:
-            json.dump([], f)
     
-    # Verificar el formato del archivo de resultados
+    # Método 2: Escaneo básico de seguridad con Python
+    print("Ejecutando escaneo básico de seguridad con Python...")
     try:
-        with open(nuclei_path, "r") as f:
-            content = f.read().strip()
-            if content:
-                # Intentar cargar el JSON para verificar su validez
-                try:
-                    json.loads(content)
-                except json.JSONDecodeError:
-                    print("El archivo de resultados de nuclei no es un JSON válido, creando uno nuevo")
-                    with open(nuclei_path, "w") as f:
-                        json.dump([], f)
+        import requests
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
+        # Función para verificar headers de seguridad
+        def check_security_headers(url):
+            results = []
+            try:
+                response = requests.get(url, timeout=10, verify=False, allow_redirects=True)
+                headers = response.headers
+                
+                # Verificar Content-Security-Policy
+                if 'Content-Security-Policy' not in headers:
+                    results.append({
+                        "template-id": "missing-csp-header",
+                        "info": {
+                            "name": "Missing Content-Security-Policy Header",
+                            "severity": "high",
+                            "description": "El sitio no tiene configurada una política de seguridad de contenido (CSP), lo que puede permitir ataques XSS."
+                        },
+                        "matched-at": url
+                    })
+                
+                # Verificar X-Frame-Options
+                if 'X-Frame-Options' not in headers:
+                    results.append({
+                        "template-id": "missing-x-frame-options",
+                        "info": {
+                            "name": "Missing X-Frame-Options Header",
+                            "severity": "medium",
+                            "description": "El sitio no tiene configurado X-Frame-Options, lo que puede permitir ataques de clickjacking."
+                        },
+                        "matched-at": url
+                    })
+                
+                # Verificar X-XSS-Protection
+                if 'X-XSS-Protection' not in headers:
+                    results.append({
+                        "template-id": "missing-xss-protection",
+                        "info": {
+                            "name": "Missing X-XSS-Protection Header",
+                            "severity": "medium",
+                            "description": "El sitio no tiene configurado X-XSS-Protection, lo que puede aumentar el riesgo de ataques XSS."
+                        },
+                        "matched-at": url
+                    })
+                
+                # Verificar Strict-Transport-Security (HSTS)
+                if 'Strict-Transport-Security' not in headers and url.startswith('https'):
+                    results.append({
+                        "template-id": "missing-hsts",
+                        "info": {
+                            "name": "Missing HTTP Strict Transport Security",
+                            "severity": "medium",
+                            "description": "El sitio no tiene configurado HSTS, lo que puede permitir ataques de downgrade a HTTP."
+                        },
+                        "matched-at": url
+                    })
+                
+                # Verificar X-Content-Type-Options
+                if 'X-Content-Type-Options' not in headers:
+                    results.append({
+                        "template-id": "missing-content-type-options",
+                        "info": {
+                            "name": "Missing X-Content-Type-Options Header",
+                            "severity": "low",
+                            "description": "El sitio no tiene configurado X-Content-Type-Options, lo que puede permitir ataques de MIME sniffing."
+                        },
+                        "matched-at": url
+                    })
+                
+                # Verificar Referrer-Policy
+                if 'Referrer-Policy' not in headers:
+                    results.append({
+                        "template-id": "missing-referrer-policy",
+                        "info": {
+                            "name": "Missing Referrer-Policy Header",
+                            "severity": "low",
+                            "description": "El sitio no tiene configurado Referrer-Policy, lo que puede filtrar información sensible en las referencias."
+                        },
+                        "matched-at": url
+                    })
+                
+                # Verificar Cookies sin atributos de seguridad
+                if 'Set-Cookie' in headers:
+                    cookies = headers.get_all('Set-Cookie')
+                    for cookie in cookies:
+                        if 'HttpOnly' not in cookie:
+                            results.append({
+                                "template-id": "cookie-without-httponly",
+                                "info": {
+                                    "name": "Cookie Without HttpOnly Flag",
+                                    "severity": "medium",
+                                    "description": "Una cookie no tiene el atributo HttpOnly, lo que puede permitir el robo de cookies mediante XSS."
+                                },
+                                "matched-at": url
+                            })
+                        if 'Secure' not in cookie and url.startswith('https'):
+                            results.append({
+                                "template-id": "cookie-without-secure",
+                                "info": {
+                                    "name": "Cookie Without Secure Flag",
+                                    "severity": "medium",
+                                    "description": "Una cookie no tiene el atributo Secure, lo que puede permitir la transmisión de cookies por HTTP no cifrado."
+                                },
+                                "matched-at": url
+                            })
+                
+                # Verificar información sensible en el código fuente
+                source_code = response.text.lower()
+                if 'api_key' in source_code or 'apikey' in source_code or 'api-key' in source_code:
+                    results.append({
+                        "template-id": "exposed-api-key",
+                        "info": {
+                            "name": "Possible API Key Exposure",
+                            "severity": "high",
+                            "description": "Se ha detectado una posible exposición de clave de API en el código fuente."
+                        },
+                        "matched-at": url
+                    })
+                
+                if 'password' in source_code and ('var' in source_code or 'const' in source_code or 'let' in source_code):
+                    results.append({
+                        "template-id": "exposed-password",
+                        "info": {
+                            "name": "Possible Password Exposure",
+                            "severity": "high",
+                            "description": "Se ha detectado una posible exposición de contraseña en el código fuente."
+                        },
+                        "matched-at": url
+                    })
+                
+                return results
+            except Exception as e:
+                print(f"Error escaneando {url}: {str(e)}")
+                return []
+        
+        # Escanear URLs en paralelo
+        python_results = []
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_url = {executor.submit(check_security_headers, url): url for url in urls}
+            for future in as_completed(future_to_url):
+                result = future.result()
+                if result:
+                    python_results.extend(result)
+        
+        print(f"Escaneo básico encontró {len(python_results)} problemas de seguridad")
+        all_results.extend(python_results)
+        
     except Exception as e:
-        print(f"Error verificando el archivo de resultados de nuclei: {str(e)}")
-        with open(nuclei_path, "w") as f:
-            json.dump([], f)
+        print(f"Error en el escaneo básico de seguridad: {str(e)}")
     
+    # Guardar todos los resultados combinados
+    with open(nuclei_path, "w") as f:
+        json.dump(all_results, f, indent=2)
+    
+    print(f"Total de vulnerabilidades encontradas: {len(all_results)}")
     return nuclei_path
 
 # 4. Escaneo de configuración TLS
 def tls_scan(domain, tmp_dir):
-    print(f"[4/7] Analizando configuración TLS...")
+    print(f"[4/7] Analizando configuración TLS avanzada...")
     tls_path = f"{tmp_dir}/tls.json"
     
+    # Resultados combinados
+    results = {
+        "domain": domain,
+        "scanResult": [],
+        "protocols": {},
+        "ciphers": [],
+        "certificate": {}
+    }
+    
+    # Método 1: testssl.sh (si está disponible)
     try:
         # Verificar que hexdump esté disponible
         hexdump_check = sh("which hexdump || command -v hexdump", ignore_errors=True)
@@ -184,47 +608,180 @@ def tls_scan(domain, tmp_dir):
                 sh("ln -sf /opt/testssl/testssl.sh /usr/local/bin/testssl.sh && chmod +x /usr/local/bin/testssl.sh", ignore_errors=True)
         
         # Intentar usar testssl.sh con parámetros más robustos
-        sh(f"testssl.sh --quiet --jsonfile {tls_path} {domain}", ignore_errors=True)
+        testssl_tmp_path = f"{tmp_dir}/testssl_raw.json"
+        sh(f"testssl.sh --quiet --severity LOW,MEDIUM,HIGH,CRITICAL --jsonfile {testssl_tmp_path} {domain}", ignore_errors=True, timeout=600)
         
         # Verificar que el archivo JSON se haya creado correctamente
-        if not os.path.exists(tls_path) or os.path.getsize(tls_path) == 0:
-            raise Exception("El archivo JSON de testssl.sh no se creó correctamente")
-            
+        if os.path.exists(testssl_tmp_path) and os.path.getsize(testssl_tmp_path) > 0:
+            try:
+                with open(testssl_tmp_path, "r") as f:
+                    testssl_data = json.load(f)
+                    # Extraer resultados relevantes
+                    if "scanResult" in testssl_data:
+                        results["scanResult"].extend(testssl_data["scanResult"])
+                    print(f"Análisis testssl.sh completado con {len(testssl_data.get('scanResult', []))} hallazgos")
+            except Exception as e:
+                print(f"Error procesando resultados de testssl.sh: {str(e)}")
+        else:
+            print("testssl.sh no generó resultados válidos")
     except Exception as e:
         print(f"Error con testssl.sh: {str(e)}")
-        print("Creando archivo de resultados básico para TLS")
-        # Crear un JSON básico si testssl no está disponible o falla
-        with open(tls_path, "w") as f:
-            json.dump({
-                "domain": domain, 
-                "tls_issues": "No analizado",
-                "error": str(e),
-                "scanResult": [{
-                    "id": "fallback",
-                    "severity": "INFO",
-                    "finding": "No se pudo analizar la configuración TLS"
-                }]
-            }, f)
     
+    # Método 2: Análisis TLS básico con Python
+    print("Ejecutando análisis TLS complementario con Python...")
+    try:
+        import socket
+        import ssl
+        from datetime import datetime
+        
+        # Verificar protocolos TLS soportados
+        protocols = {
+            ssl.PROTOCOL_TLSv1: "TLSv1.0",
+            ssl.PROTOCOL_TLSv1_1: "TLSv1.1",
+            ssl.PROTOCOL_TLSv1_2: "TLSv1.2"
+        }
+        
+        for protocol, name in protocols.items():
+            try:
+                context = ssl.SSLContext(protocol)
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+                with socket.create_connection((domain, 443), timeout=5) as sock:
+                    with context.wrap_socket(sock) as ssock:
+                        results["protocols"][name] = True
+                        
+                        # Verificar protocolos obsoletos
+                        if name in ["TLSv1.0", "TLSv1.1"]:
+                            results["scanResult"].append({
+                                "id": f"obsolete_protocol_{name.lower().replace('.', '_')}",
+                                "severity": "MEDIUM",
+                                "finding": f"El servidor soporta el protocolo obsoleto {name}"
+                            })
+            except Exception:
+                results["protocols"][name] = False
+        
+        # Si no hay soporte para TLSv1.2, es un problema crítico
+        if not results["protocols"].get("TLSv1.2", False):
+            results["scanResult"].append({
+                "id": "no_tls_1_2_support",
+                "severity": "CRITICAL",
+                "finding": "El servidor no soporta TLSv1.2, que es el mínimo recomendado"
+            })
+        
+        # Obtener información del certificado
+        try:
+            context = ssl.create_default_context()
+            with socket.create_connection((domain, 443), timeout=10) as sock:
+                with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                    cert = ssock.getpeercert()
+                    
+                    # Verificar fecha de expiración
+                    not_after = datetime.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
+                    days_until_expiry = (not_after - datetime.now()).days
+                    
+                    results["certificate"] = {
+                        "subject": str(cert.get('subject')),
+                        "issuer": str(cert.get('issuer')),
+                        "version": cert.get('version'),
+                        "notBefore": cert.get('notBefore'),
+                        "notAfter": cert.get('notAfter'),
+                        "serialNumber": cert.get('serialNumber'),
+                        "expiresIn": days_until_expiry
+                    }
+                    
+                    if days_until_expiry < 30:
+                        results["scanResult"].append({
+                            "id": "cert_expiring_soon",
+                            "severity": "HIGH" if days_until_expiry < 7 else "MEDIUM",
+                            "finding": f"El certificado expira en {days_until_expiry} días"
+                        })
+                    
+                    # Verificar algoritmo de firma
+                    if 'sha1' in cert.get('signatureAlgorithm', '').lower():
+                        results["scanResult"].append({
+                            "id": "weak_signature_algorithm",
+                            "severity": "HIGH",
+                            "finding": "El certificado utiliza SHA-1 como algoritmo de firma, que es considerado débil"
+                        })
+        except Exception as e:
+            print(f"Error obteniendo información del certificado: {str(e)}")
+            results["scanResult"].append({
+                "id": "tls_connection_failed",
+                "severity": "CRITICAL",
+                "finding": f"No se pudo establecer una conexión TLS: {str(e)}"
+            })
+        
+        # Verificar HSTS y otros headers de seguridad
+        try:
+            import requests
+            response = requests.get(f"https://{domain}", timeout=10, verify=False)
+            if 'Strict-Transport-Security' not in response.headers:
+                results["scanResult"].append({
+                    "id": "missing_hsts",
+                    "severity": "MEDIUM",
+                    "finding": "El servidor no implementa HTTP Strict Transport Security (HSTS)"
+                })
+        except Exception as e:
+            print(f"Error verificando HSTS: {str(e)}")
+    except Exception as e:
+        print(f"Error en el análisis TLS con Python: {str(e)}")
+    
+    # Si no hay resultados del escaneo, agregar un mensaje informativo
+    if not results["scanResult"]:
+        results["scanResult"].append({
+            "id": "no_issues_found",
+            "severity": "INFO",
+            "finding": "No se encontraron problemas de seguridad TLS"
+        })
+    
+    # Guardar resultados combinados
+    with open(tls_path, "w") as f:
+        json.dump(results, f, indent=2)
+    
+    print(f"Análisis TLS completado con {len(results['scanResult'])} hallazgos")
     return tls_path
 
-# 5. Búsqueda de credenciales filtradas
+# 5. Búsqueda avanzada de credenciales filtradas
 def check_leaks(domain, tmp_dir):
-    print(f"[5/7] Buscando credenciales filtradas...")
+    print(f"[5/7] Buscando credenciales filtradas y exposición de datos...")
     leaks_path = f"{tmp_dir}/leaks.json"
     
-    # Lista de correos comunes para verificar
+    # Lista ampliada de correos comunes para verificar
     emails = [
         f"admin@{domain}", 
         f"info@{domain}", 
         f"contact@{domain}", 
         f"security@{domain}",
         f"soporte@{domain}",
-        f"contacto@{domain}"
+        f"contacto@{domain}",
+        f"webmaster@{domain}",
+        f"ventas@{domain}",
+        f"sales@{domain}",
+        f"support@{domain}",
+        f"marketing@{domain}",
+        f"rrhh@{domain}",
+        f"hr@{domain}",
+        f"it@{domain}",
+        f"no-reply@{domain}",
+        f"noreply@{domain}",
+        f"help@{domain}",
+        f"ayuda@{domain}"
     ]
     
-    results = {}
+    # Estructura para almacenar todos los resultados
+    all_results = {
+        "domain": domain,
+        "emails_checked": len(emails),
+        "compromised_count": 0,
+        "compromised_emails": [],
+        "data_sources": [],
+        "pastebin_leaks": [],
+        "github_leaks": [],
+        "error": None
+    }
     
+    # Método 1: Verificación con Have I Been Pwned (HIBP)
+    print("Método 1: Verificando filtraciones con Have I Been Pwned...")
     try:
         # Verificar si pyhibp está instalado
         try:
@@ -233,25 +790,35 @@ def check_leaks(domain, tmp_dir):
             if pyhibp_spec is None:
                 raise ImportError("Módulo pyhibp no encontrado")
                 
-            # Ejemplo con HIBP (requiere pyhibp)
+            # Usar HIBP con pyhibp
             from pyhibp import pwnedpasswords as pw
+            from pyhibp import pwnedpasswords as hibp
             # Configurar API key si es necesario
             # from pyhibp import set_api_key
             # set_api_key("tu-api-key")
             
-            # Usar un diccionario para almacenar resultados con manejo de errores por email
+            # Verificar cada email
             for email in emails:
                 try:
-                    results[email] = {"filtrado": pw.is_password_present(email), "error": None}
+                    is_pwned = pw.is_password_present(email)
+                    if is_pwned:
+                        all_results["compromised_count"] += 1
+                        all_results["compromised_emails"].append({
+                            "email": email,
+                            "breaches": "Verificado con HIBP",
+                            "appearances": "Desconocido"
+                        })
                 except Exception as e:
-                    results[email] = {"filtrado": False, "error": str(e)}
+                    print(f"Error verificando {email} con pyhibp: {str(e)}")
         except ImportError as e:
             print(f"Error importando pyhibp: {str(e)}")
             raise
     except Exception as e:
         print(f"Error con pyhibp: {str(e)}")
         print("Usando método alternativo para verificación de filtraciones")
-        # Implementación alternativa usando requests y la API de HIBP directamente
+        
+        # Método 2: Implementación alternativa usando requests y la API de HIBP directamente
+        print("Método 2: Verificando filtraciones con API directa de HIBP...")
         try:
             import requests
             import hashlib
@@ -771,7 +1338,8 @@ def send_notification(email, pdf_path, domain, results=None):
                 json=payload,
                 headers={"Authorization": f"Bearer {key}",
                          "Content-Type": "application/json"},
-                timeout=30  # Aumentar timeout para archivos grandes
+                timeout=30,  # Aumentar timeout para archivos grandes
+                verify=True  # Verificar certificados SSL/TLS
             )
 
             ok = r.status_code == 202
