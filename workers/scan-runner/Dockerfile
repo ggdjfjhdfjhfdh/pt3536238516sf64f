@@ -40,5 +40,5 @@ RUN apt-get update && \
 
 COPY . .
 RUN pip install -e .
-COPY ../../templates/ /app/templates/
+COPY templates/ /app/templates/
 CMD ["pentest-worker"]
