@@ -42,23 +42,15 @@ RUN pip install --no-cache-dir dnstwist
 # Set working directory
 WORKDIR /app
 
-# Copiar requirements.txt y instalar dependencias de Python
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+# Copiar el código fuente
+COPY . .
+
+# Instalar el paquete pentest y dependencias
+RUN pip install -e . \
     && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0
 
-# Crear directorio para templates
-RUN mkdir -p /app/templates
-
-# Copiar templates
-COPY templates/ /app/templates/
-
-# Crear directorio para resultados temporales
-RUN mkdir -p /tmp/scan_results
-
-# Instalar el paquete pentest
-COPY . .
-RUN pip install -e .
+# Crear directorios necesarios
+RUN mkdir -p /app/templates /tmp/scan_results
 
 # Comando para ejecutar el worker
 CMD ["pentest-worker"]
