@@ -38,7 +38,7 @@ RUN apt-get update && \
 
 # Ya no usamos nuclei ni testssl.sh, hemos implementado análisis manuales
 
-COPY run_scan.py entrypoint.sh ./
-COPY templates/* /app/templates/
-RUN chmod +x /app/entrypoint.sh
-CMD ["/app/entrypoint.sh"]
+COPY . .
+RUN pip install -e .
+COPY ../templates/* /app/templates/
+CMD ["pentest-worker"]
