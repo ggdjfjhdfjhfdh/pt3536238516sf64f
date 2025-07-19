@@ -6,8 +6,8 @@ WORKDIR /app
 RUN mkdir -p /app/templates
 
 # Copiar archivos necesarios para la instalación del paquete
-COPY setup.py /app/
-COPY pentest/ /app/pentest/
+COPY setup.py .
+COPY pentest/ pentest/
 
 
 RUN apt-get update && \
@@ -34,10 +34,8 @@ RUN apt-get update && \
 # Ya no usamos nuclei ni testssl.sh, hemos implementado análisis manuales
 
 # Copiar templates y configurar el worker
-COPY ../../templates/ /app/templates/
+COPY templates/ /app/templates/
 
-# Verificar la estructura del proyecto
-RUN ls -la /app/
 
 # Instalar el paquete pentest y dependencias adicionales
 RUN pip install -e . \
