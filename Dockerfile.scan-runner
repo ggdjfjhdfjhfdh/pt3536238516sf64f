@@ -50,12 +50,15 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Crear directorio para templates
 RUN mkdir -p /app/templates
 
-# Copiar código de la aplicación y templates
-COPY run_scan.py .
-COPY workers/scan-runner/templates/ /app/templates/
+# Copiar templates
+COPY templates/ /app/templates/
 
 # Crear directorio para resultados temporales
 RUN mkdir -p /tmp/scan_results
 
+# Instalar el paquete pentest
+COPY . .
+RUN pip install -e .
+
 # Comando para ejecutar el worker
-CMD ["python", "run_scan.py"]
+CMD ["pentest-worker"]
