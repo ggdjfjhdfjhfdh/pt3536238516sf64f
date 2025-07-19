@@ -1,4 +1,4 @@
-import os, stripe, redis, rq, json
+import os, stripe, redis, json
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,7 +20,6 @@ WHSEC          = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # ---------- Cola Redis / RQ ----------
 REDIS_URL = os.getenv("REDIS_URL", "redis://red-d1r7117diees73flo1lg:6379")
-scan_q    = rq.Queue("scans", connection=redis.from_url(REDIS_URL))
 rds = redis.from_url(REDIS_URL)
 
 # ---------- Endpoints ----------
