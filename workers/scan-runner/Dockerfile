@@ -5,6 +5,10 @@ WORKDIR /app
 # Crear directorio para plantillas
 RUN mkdir -p /app/templates
 
+# Copiar archivos necesarios para la instalación del paquete
+COPY ../../setup.py /app/
+COPY ../../pentest/ /app/pentest/
+
 
 RUN apt-get update && \
     # ───── utilidades básicas ───── 
@@ -29,7 +33,11 @@ RUN apt-get update && \
 
 # Ya no usamos nuclei ni testssl.sh, hemos implementado análisis manuales
 
-# Copiar el proyecto y configurar el worker
-COPY . /app/
-RUN pip install -e .
+# Copiar templates y configurar el worker
+COPY ../../templates/ /app/templates/
+
+# Instalar el paquete pentest y dependencias adicionales
+RUN pip install -e . \
+    && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0 redis rq requests jinja2 weasyprint
+
 CMD ["pentest-worker"]
