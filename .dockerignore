@@ -19,6 +19,9 @@
 !run_scan.py
 !requirements.txt
 !Dockerfile.scan-runner
+!setup.py
+!pentest/
+!templates/
 
 # Ignorar archivos específicos
 **/__pycache__/

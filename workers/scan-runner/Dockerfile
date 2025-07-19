@@ -6,8 +6,8 @@ WORKDIR /app
 RUN mkdir -p /app/templates
 
 # Copiar archivos necesarios para la instalación del paquete
-COPY ../../setup.py /app/
-COPY ../../pentest/ /app/pentest/
+COPY setup.py /app/
+COPY pentest/ /app/pentest/
 
 
 RUN apt-get update && \
