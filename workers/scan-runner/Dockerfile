@@ -1,18 +1,10 @@
 FROM python:3.12-slim
 
 WORKDIR /app
-COPY requirements.txt .
 
 # Crear directorio para plantillas
 RUN mkdir -p /app/templates
 
-RUN apk add --no-cache \
-    libgobject-2.0 \
-    libpango-1.0 \
-    harfbuzz \
-    libfontconfig \
-    libjpeg-turbo \
-    openjpeg
 
 RUN apt-get update && \
     # ───── utilidades básicas ───── 
@@ -33,12 +25,11 @@ RUN apt-get update && \
     && wget -qO /usr/local/bin/subfinder  https://github.com/projectdiscovery/subfinder/releases/download/v2.6.6/subfinder_2.6.6_linux_amd64  && chmod +x /usr/local/bin/subfinder \
     && apt-get install -y amass \
     && pip install --no-cache-dir dnstwist \
-    && pip install --no-cache-dir -r requirements.txt \
     && rm -rf /var/lib/apt/lists/*
 
 # Ya no usamos nuclei ni testssl.sh, hemos implementado análisis manuales
 
-COPY . .
+# Copiar el proyecto y configurar el worker
+COPY . /app/
 RUN pip install -e .
-COPY templates/ /app/templates/
 CMD ["pentest-worker"]
