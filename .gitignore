@@ -29,3 +29,27 @@ wheels/
 
 # Logs
 *.log
+logs/
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+.env
+
+# Archivos de configuración local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos generados
+*.pdf
+*.html
+*.json
+*.csv
+
+# Directorios específicos del proyecto
+reports/
+tmp/
+temp/

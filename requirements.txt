@@ -1,13 +1,19 @@
+# Dependencias principales
 redis==5.0.4
 rq==2.4.0
-python-dotenv
 requests==2.32.3
-pytz
-dnstwist
-mailersend==0.6.0
-weasyprint==62.2
 Jinja2==3.1.4
+weasyprint==62.2
+mailersend==0.6.0
+
+# Herramientas de escaneo
+dnstwist
+
+# Utilidades
+python-dotenv
+pytz
 pandas==2.2.2
 cryptography==42.0.5
 python-dateutil==2.9.0
 reportlab==4.1.0
+typing-extensions>=4.0.0
