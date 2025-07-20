@@ -1,203 +1,319 @@
 <!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>Informe de seguridad – {{ domain }}</title>
-  <style>
-    @page {
-        margin: 2.5cm 1.5cm;
-        font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-        @top-center { content: element(header); }
-        @bottom-center { content: element(footer); }
-    }
-    body {
-        color: #333;
-    }
-    header {
-        position: running(header);
-        text-align: right;
-        font-size: 10px;
-        color: #888;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
-    }
-    footer {
-        position: running(footer);
-        text-align: center;
-        font-size: 10px;
-        color: #888;
-        border-top: 1px solid #eee;
-        padding-top: 10px;
-    }
-    h1 {
-        font-size: 28px;
-        color: #1a237e;
-        margin-bottom: 10px;
-        border-bottom: 2px solid #1a237e;
-        padding-bottom: 5px;
-    }
-    h2 {
-        font-size: 20px;
-        margin-top: 1.2cm;
-        color: #1a237e;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 3px;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 0.5cm;
-        page-break-inside: auto;
-    }
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        font-size: 12px;
-        text-align: left;
-    }
-    th {
-        background-color: #f0f2ff;
-        font-weight: bold;
-    }
-    .sev-critical {
-        background-color: #f8d7da; /* Rojo más oscuro */
-        color: #721c24;
-    }
-    .sev-high {
-        background-color: #f8d7da; /* Rojo */
-        color: #721c24;
-    }
-    .sev-medium {
-        background-color: #fff3cd; /* Amarillo */
-        color: #856404;
-    }
-    .sev-low {
-        background-color: #d4edda; /* Verde */
-        color: #155724;
-    }
-    .sev-info {
-        background-color: #d1ecf1; /* Azul claro */
-        color: #0c5460;
-    }
-    .summary-box {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        padding: 15px;
-        margin-top: 20px;
-        border-radius: 5px;
-    }
-    .summary-box ul {
-        list-style-type: none;
-        padding: 0;
-    }
-    .summary-box li {
-        margin-bottom: 10px;
-    }
-    .logo {
-        float: left;
-        font-size: 24px;
-        font-weight: bold;
-        color: #1a237e;
-    }
-    .report-title {
-        text-align: right;
-    }
-    .clearfix::after {
-        content: "";
-        clear: both;
-        display: table;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Pentesting - {{ domain }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        header {
+            background-color: #003366;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        header p {
+            margin: 5px 0 0;
+            font-size: 1.1em;
+        }
+        h2 {
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            font-size: 1.8em;
+        }
+        h3 {
+            color: #0055aa;
+            margin-top: 20px;
+            font-size: 1.4em;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .summary-table th, .summary-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .summary-table th {
+            background-color: #e9ecef;
+            color: #333;
+            font-weight: bold;
+        }
+        .severity-critical { color: #dc3545; font-weight: bold; }
+        .severity-high { color: #fd7e14; font-weight: bold; }
+        .severity-medium { color: #ffc107; font-weight: bold; }
+        .severity-low { color: #17a2b8; }
+        .severity-info { color: #6c757d; }
+        .finding-list {
+            list-style: none;
+            padding: 0;
+        }
+        .finding-list li {
+            background-color: #f8f9fa;
+            border: 1px solid #e2e6ea;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .finding-list li strong {
+            color: #003366;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #777;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 10px;
+        }
+        .recommendation {
+            background-color: #e6f7ff;
+            border-left: 5px solid #007bff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .recommendation h4 {
+            color: #007bff;
+            margin-top: 0;
+        }
+    </style>
 </head>
 <body>
-<header>
-  <div class="clearfix">
-    <div class="logo">Pentest Express</div>
-    <div class="report-title">
-      <h1>Informe de Seguridad<br>{{ domain }}</h1>
-      <p style="color: #666; font-size: 12px;">Generado el {{ date }}</p>
+    <div class="container">
+        <header>
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cuc2NoZW1hc2NoZW1hcy5vcmcvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyQzIgMTcuNTIgNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMkMyMiA2LjQ4IDE3LjUyIDIgMTIgMlpNMTIgNEwxOSAxMkwxMiAyMEw1IDEyTDEyIDRaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0xMiA2TDE3IDEyTDEyIDE4TDcgMTJMMTIgNloiIGZpbGw9IiMwMDMzNjYiLz4KPC9zdmc+Cg==" alt="Logo de Pentest Express" class="logo">
+            <h1>Informe de Pentesting</h1>
+            <p>Análisis de Seguridad para {{ domain }}</p>
+            <p>Fecha del Informe: {{ report_date }}</p>
+        </header>
+
+        <div class="section">
+            <h2>Resumen Ejecutivo</h2>
+            <p>Este informe detalla los hallazgos de seguridad identificados durante el proceso de pentesting para el dominio <strong>{{ domain }}</strong>. El objetivo principal fue identificar vulnerabilidades y configuraciones erróneas que podrían ser explotadas por actores maliciosos.</p>
+            <p>Se realizaron escaneos de subdominios, huella digital de tecnologías, análisis de vulnerabilidades con Nuclei, comprobaciones TLS, búsqueda de credenciales filtradas, detección de typosquatting, análisis de CVEs, escaneo de puertos con Nmap y revisión de configuraciones de seguridad.</p>
+            
+            <h3>Métricas Clave</h3>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Métrica</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Subdominios Encontrados</td>
+                        <td>{{ subdomains_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Hosts Activos</td>
+                        <td>{{ httpx_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Vulnerabilidades Nuclei (Críticas/Altas)</td>
+                        <td>{{ nuclei_critical_high_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Problemas TLS</td>
+                        <td>{{ tls_findings_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Emails Comprometidos (HIBP)</td>
+                        <td>{{ leaks_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Dominios Typosquatting</td>
+                        <td>{{ typosquats_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>CVEs Detectados</td>
+                        <td>{{ cves_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Puertos Abiertos (Nmap)</td>
+                        <td>{{ nmap_open_ports_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Hallazgos de Configuración de Seguridad</td>
+                        <td>{{ security_config_count }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Hallazgos Detallados</h2>
+
+            <h3>Vulnerabilidades Nuclei</h3>
+            {% if nuclei_data %}
+                <ul class="finding-list">
+                    {% for finding in nuclei_data %}
+                        <li>
+                            <strong>Nombre:</strong> {{ finding.info.name }}<br>
+                            <strong>Severidad:</strong> <span class="severity-{{ finding.info.severity.lower() }}">{{ finding.info.severity }}</span><br>
+                            <strong>Host:</strong> {{ finding.host }}<br>
+                            <strong>Descripción:</strong> {{ finding.info.description | default('N/A') }}<br>
+                            <strong>Referencia:</strong> {{ finding.info.reference | default('N/A') }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron vulnerabilidades significativas con Nuclei.</p>
+            {% endif %}
+
+            <h3>Problemas de Configuración TLS</h3>
+            {% if tls_data.findings %}
+                <ul class="finding-list">
+                    {% for finding in tls_data.findings %}
+                        <li>
+                            <strong>ID:</strong> {{ finding.id }}<br>
+                            <strong>Descripción:</strong> {{ finding.description }}<br>
+                            <strong>Host:</strong> {{ tls_data.host }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron problemas de configuración TLS.</p>
+            {% endif %}
+
+            <h3>Credenciales Filtradas (Have I Been Pwned)</h3>
+            {% if leaks_data %}
+                <ul class="finding-list">
+                    {% for leak in leaks_data %}
+                        <li>
+                            <strong>Email:</strong> {{ leak.email }}<br>
+                            <strong>Brechas Encontradas:</strong> {{ leak.count }}<br>
+                            <strong>Severidad:</strong> <span class="severity-{{ leak.severity.lower() }}">{{ leak.severity }}</span><br>
+                            <strong>Detalles:</strong>
+                            <ul>
+                                {% for breach in leak.breaches %}
+                                    <li>{{ breach.Name }} ({{ breach.Domain }}) - {{ breach.BreachDate }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron credenciales filtradas para los correos comunes del dominio.</p>
+            {% endif %}
+
+            <h3>Dominios Typosquatting</h3>
+            {% if typosquats_data %}
+                <ul class="finding-list">
+                    {% for typo in typosquats_data %}
+                        <li>
+                            <strong>Dominio Similar:</strong> {{ typo.domain }}<br>
+                            <strong>Distancia Levenshtein:</strong> {{ typo.distance }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron dominios de typosquatting.</p>
+            {% endif %}
+
+            <h3>CVEs Detectados</h3>
+            {% if cves_data %}
+                <ul class="finding-list">
+                    {% for cve in cves_data %}
+                        <li>
+                            <strong>ID CVE:</strong> {{ cve.cve_id }}<br>
+                            <strong>Tecnología Afectada:</strong> {{ cve.affected_technology }}<br>
+                            <strong>Descripción:</strong> {{ cve.description | default('N/A') }}<br>
+                            <strong>Severidad:</strong> <span class="severity-{{ cve.severity.lower() }}">{{ cve.severity }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se detectaron CVEs significativos.</p>
+            {% endif %}
+
+            <h3>Puertos y Servicios Abiertos (Nmap)</h3>
+            {% if nmap_data %}
+                <ul class="finding-list">
+                    {% for item in nmap_data %}
+                        <li>
+                            <strong>Host:</strong> {{ item.host }}<br>
+                            <strong>Puerto:</strong> {{ item.port }}/{{ item.protocol }}<br>
+                            <strong>Servicio:</strong> {{ item.service }} ({{ item.product }} {{ item.version }} {{ item.extrainfo }})<br>
+                            <strong>Estado:</strong> {{ item.status }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron puertos abiertos o servicios relevantes.</p>
+            {% endif %}
+
+            <h3>Hallazgos de Configuración de Seguridad</h3>
+            {% if security_config_data %}
+                <ul class="finding-list">
+                    {% for finding in security_config_data %}
+                        <li>
+                            <strong>Tipo:</strong> {{ finding.type }}<br>
+                            <strong>Descripción:</strong> {{ finding.description }}<br>
+                            <strong>Severidad:</strong> <span class="severity-{{ finding.severity.lower() }}">{{ finding.severity }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron hallazgos de configuración de seguridad.</p>
+            {% endif %}
+        </div>
+
+        <div class="section">
+            <h2>Recomendaciones</h2>
+            {% if recommendations %}
+                {% for rec in recommendations %}
+                    <div class="recommendation">
+                        <h4>{{ rec.title }}</h4>
+                        <p><strong>Descripción:</strong> {{ rec.description }}</p>
+                        <p><strong>Solución:</strong> {{ rec.solution }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No se generaron recomendaciones específicas basadas en los hallazgos.</p>
+            {% endif %}
+        </div>
+
+        <footer>
+            <p>&copy; {{ current_year }} Pentest Express. Todos los derechos reservados.</p>
+            <p>Este informe es confidencial y está destinado únicamente al destinatario.</p>
+        </footer>
     </div>
-  </div>
-</header>
-
-<div class="summary-box">
-  <h2>Resumen Ejecutivo</h2>
-  <ul>
-    <li><strong>🔍 Subdominios:</strong> {{ summary.subdomains }} identificados y analizados</li>
-    <li><strong>⚠️ Vulnerabilidades:</strong> {{ summary.vulns }} hallazgos críticos/altos detectados por Nuclei</li>
-    <li><strong>🔒 Configuración TLS:</strong> {{ summary.tls }}</li>
-    <li><strong>🔑 Credenciales:</strong> {{ summary.leaks }}</li>
-  </ul>
-</div>
-
-<h2>Subdominios vivos</h2>
-<table>
-  <thead><tr><th>#</th><th>Host</th><th>Status</th><th>Tecnologías</th></tr></thead>
-  <tbody>
-  {% for s in subdomains %}
-    <tr><td>{{ loop.index }}</td><td>{{ s.url }}</td><td>{{ s.status }}</td><td>{{ ", ".join(s.tech) }}</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-
-<h2>Vulnerabilidades Críticas y Altas (Nuclei)</h2>
-{% if vulnerabilities %}
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Host</th>
-        <th>Plantilla</th>
-        <th>Severidad</th>
-        <th>Descripción</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for v in vulnerabilities %}
-        <tr class="sev-{{ v.severity|lower }}">
-          <td>{{ loop.index }}</td>
-          <td>{{ v.host }}</td>
-          <td>{{ v.template }}</td>
-          <td>{{ v.severity|upper }}</td>
-          <td>{{ v.description|default('No disponible', true) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>✅ No se encontraron vulnerabilidades de criticidad alta o crítica.</p>
-{% endif %}
-
-<h2>Dominios de Typosquatting Relevantes</h2>
-{% if typosquats %}
-  <p>Se han detectado dominios que podrían ser utilizados para ataques de phishing. Se recomienda su registro para proteger la marca.</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Dominio Detectado</th>
-        <th>Tipo de Mutación</th>
-        <th>Registros DNS</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for t in typosquats[:15] %}
-        <tr>
-          <td>{{ t.domain }}</td>
-          <td>{{ t.fuzzer }}</td>
-          <td>
-            {% if t.dns_a %}<strong>A:</strong> {{ t.dns_a|join(', ') }}{% endif %}
-            {% if t.dns_mx %}<strong>MX:</strong> {{ t.dns_mx|join(', ') }}{% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>✅ No se encontraron dominios de typosquatting relevantes.</p>
+</body>
+</html>
 {% endif %}
 
 <h2>Recomendaciones y Próximos Pasos</h2>

@@ -38,7 +38,11 @@ RUN apt-get update && \
 COPY templates/ /app/templates/
 
 # Instalar el paquete pentest y dependencias adicionales
-RUN pip install -e . \
-    && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0 redis==5.0.4 requests==2.32.3 jinja2==3.1.4 weasyprint==62.2 pdfkit
+# Instalar el paquete pentest
+RUN pip install -e .
+
+# Instalar dependencias adicionales desde requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["pentest-worker"]
