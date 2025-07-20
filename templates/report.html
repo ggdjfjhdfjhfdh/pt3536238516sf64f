@@ -119,7 +119,7 @@
     <div class="logo">Pentest Express</div>
     <div class="report-title">
       <h1>Informe de Seguridad<br>{{ domain }}</h1>
-      <p style="color: #666; font-size: 12px;">Generado el {{ now }}</p>
+      <p style="color: #666; font-size: 12px;">Generado el {{ date }}</p>
     </div>
   </div>
 </header>
@@ -138,14 +138,14 @@
 <table>
   <thead><tr><th>#</th><th>Host</th><th>Status</th><th>Tecnologías</th></tr></thead>
   <tbody>
-  {% for s in subs %}
+  {% for s in subdomains %}
     <tr><td>{{ loop.index }}</td><td>{{ s.url }}</td><td>{{ s.status }}</td><td>{{ ", ".join(s.tech) }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
 
 <h2>Vulnerabilidades Críticas y Altas (Nuclei)</h2>
-{% if vulns %}
+{% if vulnerabilities %}
   <table>
     <thead>
       <tr>
@@ -157,7 +157,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for v in vulns %}
+      {% for v in vulnerabilities %}
         <tr class="sev-{{ v.severity|lower }}">
           <td>{{ loop.index }}</td>
           <td>{{ v.host }}</td>
@@ -173,7 +173,7 @@
 {% endif %}
 
 <h2>Dominios de Typosquatting Relevantes</h2>
-{% if typos %}
+{% if typosquats %}
   <p>Se han detectado dominios que podrían ser utilizados para ataques de phishing. Se recomienda su registro para proteger la marca.</p>
   <table>
     <thead>
@@ -184,7 +184,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for t in typos[:15] %}
+      {% for t in typosquats[:15] %}
         <tr>
           <td>{{ t.domain }}</td>
           <td>{{ t.fuzzer }}</td>
@@ -198,6 +198,90 @@
   </table>
 {% else %}
   <p>✅ No se encontraron dominios de typosquatting relevantes.</p>
+{% endif %}
+
+<h2>Hallazgos de CVEs</h2>
+{% if cves %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>CVE ID</th>
+        <th>Descripción</th>
+        <th>Severidad</th>
+        <th>Tecnología Afectada</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cve in cves %}
+        <tr class="sev-{{ cve.severity|lower }}">
+          <td>{{ loop.index }}</td>
+          <td>{{ cve.cve_id }}</td>
+          <td>{{ cve.description }}</td>
+          <td>{{ cve.severity }}</td>
+          <td>{{ cve.affected_technology }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>✅ No se encontraron hallazgos de CVEs.</p>
+{% endif %}
+
+<h2>Hallazgos de Nmap</h2>
+{% if nmap_findings %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Host</th>
+        <th>Puerto</th>
+        <th>Servicio</th>
+        <th>Versión</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nmap in nmap_findings %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ nmap.host }}</td>
+          <td>{{ nmap.port }}</td>
+          <td>{{ nmap.service }}</td>
+          <td>{{ nmap.version }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>✅ No se encontraron hallazgos de Nmap.</p>
+{% endif %}
+
+<h2>Hallazgos de Configuración de Seguridad</h2>
+{% if security_config_findings %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>URL</th>
+        <th>Tipo</th>
+        <th>Descripción</th>
+        <th>Severidad</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for config in security_config_findings %}
+        <tr class="sev-{{ config.severity|lower }}">
+          <td>{{ loop.index }}</td>
+          <td>{{ config.url }}</td>
+          <td>{{ config.type }}</td>
+          <td>{{ config.description }}</td>
+          <td>{{ config.severity }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>✅ No se encontraron hallazgos de configuración de seguridad.</p>
 {% endif %}
 
 <footer>
