@@ -23,6 +23,7 @@ RUN apt-get update && \
         gir1.2-glib-2.0 libcairo2 libfontconfig1 \
         libjpeg62-turbo libgif7 libpng16-16 \
         libfribidi0 libxml2 libxslt1.1 \
+        wkhtmltopdf \
     \
     # ───── herramientas de seguridad ───── 
     && wget -qO /usr/local/bin/httpx      https://github.com/projectdiscovery/httpx/releases/download/v1.6.3/httpx_1.6.3_linux_amd64  && chmod +x /usr/local/bin/httpx \
