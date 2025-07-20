@@ -200,6 +200,16 @@
   <p>✅ No se encontraron dominios de typosquatting relevantes.</p>
 {% endif %}
 
+<h2>Recomendaciones y Próximos Pasos</h2>
+{% if recommendations %}
+  {% for rec in recommendations %}
+    <h3>{{ rec.title }}</h3>
+    <p>{{ rec.description }}</p>
+  {% endfor %}
+{% else %}
+  <p>No se generaron recomendaciones específicas en este informe.</p>
+{% endif %}
+
 <h2>Hallazgos de CVEs</h2>
 {% if cves %}
   <table>

@@ -22,7 +22,7 @@ services:
         sync: false
       # Redis interno (DNS = redis)
       - key: REDIS_URL
-        value: redis://red-d1r7117diees73flo1lg:6379
+        value: redis://red-d1ukfuer433s73es9br0:6379
 
   # ─────────── Redis (Key-Value) ───────────
   - name: redis
@@ -41,7 +41,7 @@ services:
     plan: standard    # Cambiado a standard para más recursos (1GB RAM / 1 CPU)
     envVars:
       - key: REDIS_URL
-        value: redis://red-d1r7117diees73flo1lg:6379
+        value: redis://red-d1ukfuer433s73es9br0:6379
       - key: MAILERSEND_API_KEY
         sync: false    # Configurar en el dashboard de Render
       - key: FROM_EMAIL
