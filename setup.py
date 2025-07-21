@@ -12,6 +12,7 @@ setup(
         "pdfkit",
         "defusedxml",
         "amass",
+        
     ],
     entry_points={
         "console_scripts": [

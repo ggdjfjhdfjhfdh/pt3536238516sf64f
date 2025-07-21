@@ -28,7 +28,7 @@ RUN apt-get update && \
     # ───── herramientas de seguridad ───── 
     && wget -qO /usr/local/bin/httpx      https://github.com/projectdiscovery/httpx/releases/download/v1.6.3/httpx_1.6.3_linux_amd64  && chmod +x /usr/local/bin/httpx \
     && wget -qO /usr/local/bin/subfinder  https://github.com/projectdiscovery/subfinder/releases/download/v2.6.6/subfinder_2.6.6_linux_amd64  && chmod +x /usr/local/bin/subfinder \
-    && apt-get install -y amass \
+    && apt-get install -y amass nmap \
     && pip install --no-cache-dir dnstwist \
     && rm -rf /var/lib/apt/lists/*
 
