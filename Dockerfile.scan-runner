@@ -37,6 +37,7 @@ ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
 # Instalar herramientas de reconocimiento
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest \
     && go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest \
+    && go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest \
     && go install -v github.com/owasp-amass/amass/v3/...@master
 
 # Instalar hexdump (necesario para algunas operaciones)
