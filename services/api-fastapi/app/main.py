@@ -1,4 +1,9 @@
-import os, stripe, redis, json, asyncio
+import os
+import redis
+import json
+import asyncio
+import stripe
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
@@ -33,9 +38,10 @@ def scan_status(job_id: str):
 async def scan_events(job_id: str):
     async def event_stream():
         while True:
-            # Check Redis for updates for this job_id
-            # For now, let's just send a dummy event every few seconds
-            yield f"data: {{'job_id': '{job_id}', 'status': 'in_progress'}}\n\n"
+            meta = rds.hget("rq:job:"+job_id, "meta")
+            if meta:
+                progress_data = json.loads(meta)["progress"]
+                yield f"data: {json.dumps(progress_data)}\n\n"
             await asyncio.sleep(3) # Simulate delay
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
