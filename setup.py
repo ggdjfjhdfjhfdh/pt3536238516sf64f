@@ -10,6 +10,7 @@ setup(
         "jinja2",
         "weasyprint",
         "pdfkit",
+        "defusedxml",
     ],
     entry_points={
         "console_scripts": [
