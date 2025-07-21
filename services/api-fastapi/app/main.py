@@ -44,6 +44,8 @@ async def create_checkout():
     )
     return {"id": session.id}
 
+
+
 @app.post("/stripe/webhook")
 async def stripe_webhook(req: Request):
     payload = await req.body()
