@@ -58,6 +58,7 @@ async def stripe_webhook(req: Request):
     if event["type"] == "checkout.session.completed":
         data    = event["data"]["object"]
         dominio = data["custom_fields"][0]["text"]["value"]
+
         email   = data["customer_details"]["email"]
 
         # ► Publicar en la cola BLPOP
@@ -65,3 +66,12 @@ async def stripe_webhook(req: Request):
         print(f"Published scan for {dominio} → {email}")
 
     return {"ok": True}
+
+
+@app.get("/stripe/session/{session_id}")
+async def get_stripe_session(session_id: str):
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        return {"status": session.status, "customer_email": session.customer_details.email}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
