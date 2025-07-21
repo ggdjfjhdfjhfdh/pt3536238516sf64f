@@ -49,7 +49,7 @@ COPY . .
 
 # Instalar el paquete pentest y dependencias
 RUN pip install -e . \
-    && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0
+    && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0 pdfkit
 
 # Crear directorios necesarios
 RUN mkdir -p /app/templates /tmp/scan_results
