@@ -43,6 +43,7 @@ RUN pip install -e .
 
 # Instalar dependencias adicionales desde requirements.txt
 COPY requirements.txt .
+RUN pip install --no-cache-dir defusedxml
 RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["pentest-worker"]
