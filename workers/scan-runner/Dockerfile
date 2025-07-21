@@ -41,9 +41,9 @@ COPY templates/ /app/templates/
 # Instalar el paquete pentest
 RUN pip install -e .
 
+RUN pip install defusedxml
 # Instalar dependencias adicionales desde requirements.txt
 COPY requirements.txt .
-RUN pip install --no-cache-dir defusedxml
 RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["pentest-worker"]
