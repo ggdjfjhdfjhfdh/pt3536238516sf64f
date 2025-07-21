@@ -39,6 +39,7 @@ services:
     dockerfilePath: Dockerfile.scan-runner
     dockerContext: .
     plan: standard    # Cambiado a standard para más recursos (1GB RAM / 1 CPU)
+    cap_add: ["NET_RAW"]
     envVars:
       - key: REDIS_URL
         value: redis://red-d1ukfuer433s73es9br0:6379
