@@ -12,6 +12,7 @@ setup(
         "pdfkit",
         "defusedxml",
         "amass",
+        "sslyze",
         
     ],
     entry_points={
