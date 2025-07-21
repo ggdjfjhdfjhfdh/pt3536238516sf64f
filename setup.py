@@ -9,6 +9,7 @@ setup(
         "requests",
         "jinja2",
         "weasyprint",
+        "pdfkit",
     ],
     entry_points={
         "console_scripts": [
