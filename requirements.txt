@@ -9,6 +9,7 @@ mailersend==0.6.0
 # Herramientas de escaneo
 dnstwist
 dnspython
+sslyze
 
 # Utilidades
 python-dotenv

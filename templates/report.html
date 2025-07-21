@@ -334,6 +334,60 @@
         <div class="section">
             <h2>Hallazgos Detallados</h2>
 
+            <h3>Mini-Heatmap MITRE ATT&CK</h3>
+            <style>
+                .mitre-heatmap {
+                    display: grid;
+                    --mitre-tactic-count: {{ mitre_tactics | length }};
+                    grid-template-columns: repeat(var(--mitre-tactic-count), 1fr);
+                    gap: 2px;
+                    width: 100%;
+                    border: 1px solid #ccc;
+                    margin-bottom: 20px;
+                }
+                .mitre-tactic-header {
+                    background-color: #003366;
+                    color: white;
+                    font-weight: bold;
+                    padding: 5px;
+                    text-align: center;
+                    font-size: 0.8em;
+                    word-wrap: break-word;
+                }
+                .mitre-technique-cell {
+                    background-color: #f0f0f0;
+                    border: 1px solid #e0e0e0;
+                    padding: 5px;
+                    text-align: center;
+                    font-size: 0.7em;
+                    min-height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    word-wrap: break-word;
+                }
+                .mitre-technique-cell.detected {
+                    background-color: #dc3545; /* Rojo para detectado */
+                    color: white;
+                    font-weight: bold;
+                }
+            </style>
+            <div class="mitre-heatmap">
+                {% for tactic in mitre_tactics %}
+                    <div class="mitre-tactic-header">{{ tactic }}</div>
+                {% endfor %}
+
+                {% for tactic in mitre_tactics %}
+                    <div>
+                        {% for technique_id, detected in mitre_heatmap_data[tactic].items() %}
+                            <div class="mitre-technique-cell {% if detected %}detected{% endif %}">
+                                {{ technique_id }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+
             <h3 id="nuclei-findings">Vulnerabilidades Nuclei</h3>
             {% if nuclei_data %}
                 <ul class="finding-list">
