@@ -23,6 +23,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Verificar la instalación de wkhtmltopdf
+RUN ls -la /usr/bin/wkhtmltopdf || echo "/usr/bin/wkhtmltopdf not found"
+RUN ls -la /usr/local/bin/wkhtmltopdf || echo "/usr/local/bin/wkhtmltopdf not found"
+RUN wkhtmltopdf --version || echo "wkhtmltopdf command not found"
+
 
 # Instalar Go (necesario para algunas herramientas)
 RUN curl -sL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
