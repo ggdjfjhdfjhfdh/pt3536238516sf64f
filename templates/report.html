@@ -2,6 +2,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <style>
+        .cover-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            page-break-after: always;
+        }
+        .cover-page h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .cover-page h2 {
+            font-size: 1.5em;
+            margin-bottom: 50px;
+        }
+        .cover-page p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        .table-of-contents {
+            page-break-after: always;
+            padding-top: 50px;
+        }
+        .table-of-contents h1 {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .table-of-contents ul {
+            list-style: none;
+            padding: 0;
+        }
+        .table-of-contents ul li {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .table-of-contents ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+            padding: 5px;
+            border-bottom: 1px dotted #ccc;
+        }
+        .table-of-contents ul li a:hover {
+            color: #007bff;
+        }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Informe de Pentesting - {{ domain }}</title>
@@ -112,19 +161,52 @@
     </style>
 </head>
 <body>
+    <div class="cover-page">
+        <h1>Informe de Pentesting</h1>
+        <h2>para {{ domain }}</h2>
+        <p><strong>Fecha del Informe:</strong> {{ date }}</p>
+        <p><strong>Generado por:</strong> Pentest Express</p>
+        <p><strong>Versión:</strong> 1.0</p>
+    </div>
+
+    <div class="table-of-contents">
+        <h1>Índice</h1>
+        <ul>
+            <li><a href="#resumen-ejecutivo">Resumen Ejecutivo</a></li>
+            <li><a href="#metodologia">Metodología</a></li>
+            <li><a href="#hallazgos-detallados">Hallazgos Detallados</a>
+                <ul>
+                    <li><a href="#nuclei-findings">Hallazgos de Nuclei</a></li>
+                    <li><a href="#tls-findings">Hallazgos de TLS</a></li>
+                    <li><a href="#hibp-findings">Hallazgos de HIBP (Have I Been Pwned)</a></li>
+                    <li><a href="#typosquatting-findings">Hallazgos de Typosquatting</a></li>
+                    <li><a href="#cve-findings">Hallazgos de CVEs</a></li>
+                    <li><a href="#nmap-findings">Hallazgos de Nmap</a></li>
+                    <li><a href="#security-config-findings">Hallazgos de Configuración de Seguridad</a></li>
+                </ul>
+            </li>
+            <li><a href="#recomendaciones">Recomendaciones</a></li>
+            <li><a href="#descargo-de-responsabilidad">Descargo de Responsabilidad</a></li>
+            <li><a href="#glosario-de-terminos">Glosario de Términos</a></li>
+            <li><a href="#contacto-y-soporte">Contacto y Soporte</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
     <div class="container">
         <header>
             <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cuc2NoZW1hc2NoZW1hcy5vcmcvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyQzIgMTcuNTIgNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMkMyMiA2LjQ4IDE3LjUyIDIgMTIgMlpNMTIgNEwxOSAxMkwxMiAyMEw1IDEyTDEyIDRaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0xMiA2TDE3IDEyTDEyIDE4TDcgMTJMMTIgNloiIGZpbGw9IiMwMDMzNjYiLz4KPC9zdmc+Cg==" alt="Logo de Pentest Express" class="logo">
             <h1>Informe de Pentesting</h1>
             <p>Análisis de Seguridad para {{ domain }}</p>
-            <p>Fecha del Informe: {{ report_date }}</p>
+            <p>Fecha del Informe: {{ date }}</p>
         </header>
 
         <div class="section">
             <h2>Resumen Ejecutivo</h2>
-            <p>Este informe detalla los hallazgos de seguridad identificados durante el proceso de pentesting para el dominio <strong>{{ domain }}</strong>. El objetivo principal fue identificar vulnerabilidades y configuraciones erróneas que podrían ser explotadas por actores maliciosos.</p>
-            <p>Se realizaron escaneos de subdominios, huella digital de tecnologías, análisis de vulnerabilidades con Nuclei, comprobaciones TLS, búsqueda de credenciales filtradas, detección de typosquatting, análisis de CVEs, escaneo de puertos con Nmap y revisión de configuraciones de seguridad.</p>
+            <p>{{ executive_summary_text }}</p>
             
+            <h3>Nivel de Riesgo Global: <span class="severity-{{ risk_level.lower() }}">{{ risk_level }}</span> (Puntuación: {{ risk_score }})</h3>
+
             <h3>Métricas Clave</h3>
             <table class="summary-table">
                 <thead>
@@ -170,14 +252,89 @@
                         <td>Hallazgos de Configuración de Seguridad</td>
                         <td>{{ security_config_count }}</td>
                     </tr>
+                    <tr>
+                        <td>Directorios/Archivos Expuestos (Dir Brute)</td>
+                        <td>{{ dir_brute_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Capturas de Pantalla Generadas</td>
+                        <td>{{ screenshots_count }}</td>
+                    </tr>
+                    {% if tls_grade and tls_grade != 'N/A' %}
+                    <tr>
+                        <th>Calificación TLS (SSLyze)</th>
+                        <td><span class="severity-{{ tls_grade | lower }}">{{ tls_grade }}</span></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+
+            <h3>Conteo de Vulnerabilidades por Severidad (Nuclei)</h3>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Severidad</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="severity-critical">Crítica</span></td>
+                        <td>{{ nuclei_severity_counts.critical }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="severity-high">Alta</span></td>
+                        <td>{{ nuclei_severity_counts.high }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="severity-medium">Media</span></td>
+                        <td>{{ nuclei_severity_counts.medium }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="severity-low">Baja</span></td>
+                        <td>{{ nuclei_severity_counts.low }}</td>
+                    </tr>
+                    <tr>
+                        <td><span class="severity-info">Informacional</span></td>
+                        <td>{{ nuclei_severity_counts.info }}</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
 
         <div class="section">
+            <h2>Metodología</h2>
+            <p>El proceso de pentesting se llevó a cabo siguiendo una metodología integral que abarca diversas fases para asegurar una cobertura exhaustiva del dominio objetivo. A continuación, se detallan las principales etapas y las herramientas utilizadas:</p>
+
+            <h3>1. Reconocimiento y Recopilación de Información</h3>
+            <ul>
+                <li><strong>Subdominios:</strong> Se utilizó <code>Amass</code> y otras técnicas de OSINT para descubrir subdominios asociados al dominio principal, ampliando la superficie de ataque a evaluar.</li>
+                <li><strong>Hosts Activos y Huella Digital:</strong> Se empleó <code>httpx</code> para identificar hosts activos, determinar sus puertos HTTP/S, y recopilar información sobre tecnologías utilizadas (servidores web, frameworks, etc.).</li>
+            </ul>
+
+            <h3>2. Escaneo de Vulnerabilidades</h3>
+            <ul>
+                <li><strong>Vulnerabilidades Conocidas (Nuclei):</strong> Se ejecutó <code>Nuclei</code> con una amplia gama de plantillas para detectar vulnerabilidades comunes, configuraciones erróneas, y exposiciones de información en los activos identificados.</li>
+                <li><strong>Análisis TLS/SSL:</strong> Se realizaron comprobaciones exhaustivas de la configuración TLS/SSL para identificar el uso de versiones obsoletas (TLS 1.0/1.1), cifrados débiles, certificados caducados o mal configurados.</li>
+                <li><strong>Credenciales Filtradas (HIBP):</strong> Se consultó la base de datos de Have I Been Pwned (HIBP) para verificar si alguna dirección de correo electrónico asociada al dominio ha sido comprometida en brechas de seguridad conocidas.</li>
+                <li><strong>Typosquatting:</strong> Se utilizó <code>dnstwist</code> para identificar dominios similares al objetivo que podrían ser usados para ataques de phishing o suplantación de identidad.</li>
+                <li><strong>CVEs:</strong> Se buscaron Common Vulnerabilities and Exposures (CVEs) relevantes para las tecnologías detectadas, evaluando la presencia de vulnerabilidades conocidas y sus posibles impactos.</li>
+                <li><strong>Escaneo de Puertos (Nmap):</strong> Se realizó un escaneo de puertos con <code>Nmap</code> para identificar puertos abiertos, servicios en ejecución y sus versiones, proporcionando una visión de la exposición de la red.</li>
+                <li><strong>Configuración de Seguridad:</strong> Se analizaron cabeceras HTTP y otras configuraciones del servidor web para identificar posibles debilidades como la exposición de información sensible o la falta de políticas de seguridad.</li>
+            </ul>
+
+            <h3>3. Análisis y Reporte</h3>
+            <ul>
+                <li><strong>Correlación de Hallazgos:</strong> Los resultados de todas las herramientas se correlacionaron para obtener una visión unificada de la postura de seguridad.</li>
+                <li><strong>Evaluación de Riesgos:</strong> Cada hallazgo se evaluó en términos de severidad y probabilidad de explotación para determinar el riesgo global.</li>
+                <li><strong>Recomendaciones:</strong> Se generaron recomendaciones claras y accionables para mitigar las vulnerabilidades identificadas, priorizando aquellas con mayor impacto.</li>
+            </ul>
+        </div>
+
+        <div class="section">
             <h2>Hallazgos Detallados</h2>
 
-            <h3>Vulnerabilidades Nuclei</h3>
+            <h3 id="nuclei-findings">Vulnerabilidades Nuclei</h3>
             {% if nuclei_data %}
                 <ul class="finding-list">
                     {% for finding in nuclei_data %}
@@ -194,7 +351,7 @@
                 <p>No se encontraron vulnerabilidades significativas con Nuclei.</p>
             {% endif %}
 
-            <h3>Problemas de Configuración TLS</h3>
+            <h3 id="tls-findings">Problemas de Configuración TLS</h3>
             {% if tls_data.findings %}
                 <ul class="finding-list">
                     {% for finding in tls_data.findings %}
@@ -209,7 +366,7 @@
                 <p>No se encontraron problemas de configuración TLS.</p>
             {% endif %}
 
-            <h3>Credenciales Filtradas (Have I Been Pwned)</h3>
+            <h3 id="hibp-findings">Credenciales Filtradas (Have I Been Pwned)</h3>
             {% if leaks_data %}
                 <ul class="finding-list">
                     {% for leak in leaks_data %}
@@ -230,7 +387,7 @@
                 <p>No se encontraron credenciales filtradas para los correos comunes del dominio.</p>
             {% endif %}
 
-            <h3>Dominios Typosquatting</h3>
+            <h3 id="typosquatting-findings">Dominios Typosquatting</h3>
             {% if typosquats_data %}
                 <ul class="finding-list">
                     {% for typo in typosquats_data %}
@@ -244,11 +401,41 @@
                 <p>No se encontraron dominios de typosquatting.</p>
             {% endif %}
 
-            <h3>CVEs Detectados</h3>
+            <h3 id="cve-findings">CVEs Detectados</h3>
+            <h3 id="screenshots-findings">Capturas de Pantalla</h3>
+            {% if screenshots_data %}
+                <div class="screenshot-gallery">
+                    {% for screenshot in screenshots_data %}
+                        <div class="screenshot-item">
+                            <a href="{{ screenshot.path }}" target="_blank">
+                                <img src="{{ screenshot.path }}" alt="Captura de {{ screenshot.url }}">
+                            </a>
+                            <p>{{ screenshot.url }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No se generaron capturas de pantalla.</p>
+            {% endif %}
             {% if cves_data %}
                 <ul class="finding-list">
                     {% for cve in cves_data %}
                         <li>
+
+            <h3 id="dir-brute-findings">Directorios y Archivos Expuestos (Fuerza Bruta)</h3>
+            {% if dir_brute_data %}
+                <ul class="finding-list">
+                    {% for finding in dir_brute_data %}
+                        <li>
+                            <strong>URL:</strong> {{ finding.url }}<br>
+                            <strong>Estado:</strong> {{ finding.status }}<br>
+                            <strong>Longitud:</strong> {{ finding.length }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se encontraron directorios o archivos expuestos mediante fuerza bruta ligera.</p>
+            {% endif %}
                             <strong>ID CVE:</strong> {{ cve.cve_id }}<br>
                             <strong>Tecnología Afectada:</strong> {{ cve.affected_technology }}<br>
                             <strong>Descripción:</strong> {{ cve.description | default('N/A') }}<br>
@@ -260,7 +447,7 @@
                 <p>No se detectaron CVEs significativos.</p>
             {% endif %}
 
-            <h3>Puertos y Servicios Abiertos (Nmap)</h3>
+            <h3 id="nmap-findings">Puertos y Servicios Abiertos (Nmap)</h3>
             {% if nmap_data %}
                 <ul class="finding-list">
                     {% for item in nmap_data %}
@@ -276,7 +463,7 @@
                 <p>No se encontraron puertos abiertos o servicios relevantes.</p>
             {% endif %}
 
-            <h3>Hallazgos de Configuración de Seguridad</h3>
+            <h3 id="security-config-findings">Hallazgos de Configuración de Seguridad</h3>
             {% if security_config_data %}
                 <ul class="finding-list">
                     {% for finding in security_config_data %}
@@ -307,10 +494,75 @@
             {% endif %}
         </div>
 
-        <footer>
-            <p>&copy; {{ current_year }} Pentest Express. Todos los derechos reservados.</p>
-            <p>Este informe es confidencial y está destinado únicamente al destinatario.</p>
-        </footer>
-    </div>
-</body>
+        <div class="section disclaimer">
+            <h2>Descargo de Responsabilidad</h2>
+            <p>Este informe de pentesting se genera automáticamente y se basa en las herramientas y metodologías descritas. Aunque se esfuerza por identificar la mayor cantidad posible de vulnerabilidades, no garantiza una cobertura del 100% de todas las posibles debilidades de seguridad. La seguridad es un proceso continuo y este informe representa una instantánea en el tiempo.</p>
+            <p>El cliente entiende y acepta que el pentesting, por su naturaleza, implica la simulación de ataques y puede, en raras ocasiones, causar interrupciones menores o resultados inesperados, aunque se toman todas las precauciones para evitarlo. El proveedor de este servicio no se hace responsable de cualquier daño directo o indirecto, pérdida de datos o interrupción del servicio que pueda surgir del uso de este informe o de las actividades de escaneo.</p>
+            <p>Las recomendaciones proporcionadas son generales y deben ser evaluadas y adaptadas a las necesidades específicas y al entorno del cliente. Es responsabilidad del cliente implementar las medidas de seguridad adecuadas y realizar pruebas adicionales si lo considera necesario.</p>
+            <p>Este informe es confidencial y está destinado únicamente al destinatario. No debe ser distribuido ni divulgado sin el consentimiento expreso por escrito del proveedor.</p>
+        </div>
+
+        <div class="section">
+            <h2>Glosario de Términos</h2>
+            <dl>
+                <dt><strong>Pentesting (Prueba de Penetración):</strong></dt>
+                <dd>Simulación de un ataque cibernético contra un sistema informático para encontrar vulnerabilidades de seguridad.</dd>
+
+                <dt><strong>Vulnerabilidad:</strong></dt>
+                <dd>Una debilidad en un sistema que puede ser explotada por un atacante para comprometer la seguridad.</dd>
+
+                <dt><strong>Exploit:</strong></dt>
+                <dd>Un fragmento de software, datos o secuencia de comandos que aprovecha una vulnerabilidad para causar un comportamiento no deseado o imprevisto en el software o hardware de un ordenador.</dd>
+
+                <dt><strong>Severidad (Critical, High, Medium, Low, Informational):</strong></dt>
+                <dd>Clasificación del impacto potencial de una vulnerabilidad. Crítica es la más grave, Informacional la menos.</dd>
+
+                <dt><strong>OSINT (Open Source Intelligence):</strong></dt>
+                <dd>Recopilación de información de fuentes públicas y abiertas.</dd>
+
+                <dt><strong>Subdominio:</strong></dt>
+                <dd>Una división de un dominio principal (ej. blog.ejemplo.com es un subdominio de ejemplo.com).</dd>
+
+                <dt><strong>TLS/SSL:</strong></dt>
+                <dd>Protocolos criptográficos que proporcionan seguridad en las comunicaciones por internet (ej. HTTPS).</dd>
+
+                <dt><strong>Nmap:</strong></dt>
+                <dd>Herramienta de código abierto utilizada para el descubrimiento de redes y auditorías de seguridad.</dd>
+
+                <dt><strong>Nuclei:</strong></dt>
+                <dd>Escáner de vulnerabilidades basado en plantillas, utilizado para enviar solicitudes a través de la red para detectar problemas de seguridad.</dd>
+
+                <dt><strong>HTTPX:</strong></dt>
+                <dd>Herramienta para probar múltiples servidores HTTP/S, identificar tecnologías y recopilar información.</dd>
+
+                <dt><strong>HIBP (Have I Been Pwned):</strong></dt>
+                <dd>Servicio que permite a los usuarios verificar si sus datos personales han sido comprometidos en brechas de seguridad.</dd>
+
+                <dt><strong>Typosquatting:</strong></dt>
+                <dd>Una forma de ciberocupación que se basa en errores tipográficos cometidos por los usuarios de Internet.</dd>
+
+                <dt><strong>CVE (Common Vulnerabilities and Exposures):</strong></dt>
+                <dd>Un diccionario de vulnerabilidades de seguridad de la información conocidas públicamente.</dd>
+
+                <dt><strong>Configuración de Seguridad:</strong></dt>
+                <dd>Ajustes y políticas implementadas para proteger un sistema o aplicación de amenazas.</dd>
+            </dl>
+        </div>
+
+        <div class="section">
+             <h2>Contacto y Soporte</h2>
+             <p>Si tiene alguna pregunta sobre este informe o necesita asistencia adicional con la seguridad de su sistema, no dude en ponerse en contacto con nuestro equipo de soporte:</p>
+             <ul>
+                 <li><strong>Correo Electrónico:</strong> soporte@pentestexpress.com</li>
+                 <li><strong>Teléfono:</strong> +34 123 456 789</li>
+                 <li><strong>Sitio Web:</strong> <a href="https://www.pentestexpress.com">www.pentestexpress.com</a></li>
+             </ul>
+             <p>Estamos aquí para ayudarle a fortalecer su postura de seguridad.</p>
+         </div>
+     </div>
+     <footer>
+         <p>&copy; {{ current_year }} Pentest Express. Todos los derechos reservados.</p>
+         <p>Este informe es confidencial y está destinado únicamente al destinatario.</p>
+     </footer>
+ </body>
 </html>
