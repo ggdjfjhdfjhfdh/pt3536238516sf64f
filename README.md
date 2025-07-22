@@ -26,7 +26,7 @@ pentest/
 ├── recon.py       (reconocimiento de subdominios)
 ├── fingerprint.py (detección de hosts activos)
 ├── nuclei_scan.py (escaneo de vulnerabilidades)
-├── tls_scan.py    (análisis de configuración TLS)
+
 ├── leaks.py       (búsqueda de credenciales filtradas)
 ├── typosquat.py   (detección de dominios typosquatting)
 └── report.py      (generación de informes)
