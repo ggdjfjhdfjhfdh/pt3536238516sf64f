@@ -14,6 +14,7 @@ setup(
         "amass",
         "sslyze",
         "httpx",
+        "PyYAML",
     ],
     entry_points={
         "console_scripts": [

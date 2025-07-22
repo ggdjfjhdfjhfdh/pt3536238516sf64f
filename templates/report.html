@@ -177,7 +177,7 @@
             <li><a href="#hallazgos-detallados">Hallazgos Detallados</a>
                 <ul>
                     <li><a href="#nuclei-findings">Hallazgos de Nuclei</a></li>
-                    <li><a href="#tls-findings">Hallazgos de TLS</a></li>
+
                     <li><a href="#hibp-findings">Hallazgos de HIBP (Have I Been Pwned)</a></li>
                     <li><a href="#typosquatting-findings">Hallazgos de Typosquatting</a></li>
                     <li><a href="#cve-findings">Hallazgos de CVEs</a></li>
@@ -228,10 +228,7 @@
                         <td>Vulnerabilidades Nuclei (Críticas/Altas)</td>
                         <td>{{ nuclei_critical_high_count }}</td>
                     </tr>
-                    <tr>
-                        <td>Problemas TLS</td>
-                        <td>{{ tls_findings_count }}</td>
-                    </tr>
+
                     <tr>
                         <td>Emails Comprometidos (HIBP)</td>
                         <td>{{ leaks_count }}</td>
@@ -260,12 +257,7 @@
                         <td>Capturas de Pantalla Generadas</td>
                         <td>{{ screenshots_count }}</td>
                     </tr>
-                    {% if tls_grade and tls_grade != 'N/A' %}
-                    <tr>
-                        <th>Calificación TLS (SSLyze)</th>
-                        <td><span class="severity-{{ tls_grade | lower }}">{{ tls_grade }}</span></td>
-                    </tr>
-                    {% endif %}
+
                 </tbody>
             </table>
 
@@ -315,7 +307,7 @@
             <h3>2. Escaneo de Vulnerabilidades</h3>
             <ul>
                 <li><strong>Vulnerabilidades Conocidas (Nuclei):</strong> Se ejecutó <code>Nuclei</code> con una amplia gama de plantillas para detectar vulnerabilidades comunes, configuraciones erróneas, y exposiciones de información en los activos identificados.</li>
-                <li><strong>Análisis TLS/SSL:</strong> Se realizaron comprobaciones exhaustivas de la configuración TLS/SSL para identificar el uso de versiones obsoletas (TLS 1.0/1.1), cifrados débiles, certificados caducados o mal configurados.</li>
+
                 <li><strong>Credenciales Filtradas (HIBP):</strong> Se consultó la base de datos de Have I Been Pwned (HIBP) para verificar si alguna dirección de correo electrónico asociada al dominio ha sido comprometida en brechas de seguridad conocidas.</li>
                 <li><strong>Typosquatting:</strong> Se utilizó <code>dnstwist</code> para identificar dominios similares al objetivo que podrían ser usados para ataques de phishing o suplantación de identidad.</li>
                 <li><strong>CVEs:</strong> Se buscaron Common Vulnerabilities and Exposures (CVEs) relevantes para las tecnologías detectadas, evaluando la presencia de vulnerabilidades conocidas y sus posibles impactos.</li>
@@ -405,20 +397,7 @@
                 <p>No se encontraron vulnerabilidades significativas con Nuclei.</p>
             {% endif %}
 
-            <h3 id="tls-findings">Problemas de Configuración TLS</h3>
-            {% if tls_data.findings %}
-                <ul class="finding-list">
-                    {% for finding in tls_data.findings %}
-                        <li>
-                            <strong>ID:</strong> {{ finding.id }}<br>
-                            <strong>Descripción:</strong> {{ finding.description }}<br>
-                            <strong>Host:</strong> {{ tls_data.host }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron problemas de configuración TLS.</p>
-            {% endif %}
+
 
             <h3 id="hibp-findings">Credenciales Filtradas (Have I Been Pwned)</h3>
             {% if leaks_data %}
@@ -577,8 +556,7 @@
                 <dt><strong>Subdominio:</strong></dt>
                 <dd>Una división de un dominio principal (ej. blog.ejemplo.com es un subdominio de ejemplo.com).</dd>
 
-                <dt><strong>TLS/SSL:</strong></dt>
-                <dd>Protocolos criptográficos que proporcionan seguridad en las comunicaciones por internet (ej. HTTPS).</dd>
+
 
                 <dt><strong>Nmap:</strong></dt>
                 <dd>Herramienta de código abierto utilizada para el descubrimiento de redes y auditorías de seguridad.</dd>

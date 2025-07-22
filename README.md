@@ -7,7 +7,7 @@ Escáner de seguridad modular y tipado para análisis automatizado de dominios.
 - Reconocimiento de subdominios
 - Fingerprinting de hosts activos
 - Escaneo de vulnerabilidades
-- Análisis de configuración TLS
+
 - Detección de credenciales filtradas
 - Detección de dominios typosquatting
 - Generación de informes PDF

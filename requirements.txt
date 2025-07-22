@@ -13,6 +13,8 @@ sslyze
 
 httpx==0.27.0
 
+PyYAML==6.0.1
+
 # Utilidades
 python-dotenv
 pytz
