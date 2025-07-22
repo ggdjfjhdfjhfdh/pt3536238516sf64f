@@ -1,6 +1,6 @@
 FROM python:3.9-slim-bookworm
 
-# Instalar dependencias del sistema
+# Instalar dependencias del sistema, Go y herramientas
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -21,33 +21,26 @@ RUN apt-get update && apt-get install -y \
     wkhtmltopdf \
     && ln -s /usr/bin/wkhtmltopdf /usr/local/bin/wkhtmltopdf \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
+    && echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
+ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
 
 # Verificar la instalación de wkhtmltopdf
 RUN ls -la /usr/bin/wkhtmltopdf || echo "/usr/bin/wkhtmltopdf not found"
 RUN ls -la /usr/local/bin/wkhtmltopdf || echo "/usr/local/bin/wkhtmltopdf not found"
 RUN wkhtmltopdf --version || echo "wkhtmltopdf command not found"
 
-
-# Instalar Go (necesario para algunas herramientas)
-RUN curl -sL https://golang.org/dl/go1.21.0.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
-    && echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
-ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
-
-# Instalar herramientas de reconocimiento
-RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest \
+RUN go clean -modcache \
+    && go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest \
     && go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest \
     && go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest \
     && go install -v github.com/owasp-amass/amass/v3/...@master \
-    && go install github.com/sensepost/gowitness@latest
+    && go install github.com/sensepost/gowitness@latest \
+    && ls -l /root/go/bin/gowitness \
+    && /root/go/bin/gowitness --version
 
-# Instalar hexdump (necesario para algunas operaciones)
 RUN apt-get update && apt-get install -y bsdextrautils && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Instalar dnstwist
-RUN pip install --no-cache-dir dnstwist
-
-# Ya no necesitamos s3scanner
 
 # Set working directory
 WORKDIR /app
@@ -55,8 +48,9 @@ WORKDIR /app
 # Copiar el código fuente
 COPY . .
 
-# Instalar el paquete pentest y dependencias
+# Instalar el paquete pentest y dependencias de Python
 RUN pip install -e . \
+    && pip install --no-cache-dir dnstwist \
     && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0 pdfkit
 
 # Crear directorios necesarios
