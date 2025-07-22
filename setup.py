@@ -13,7 +13,7 @@ setup(
         "defusedxml",
         "amass",
         "sslyze",
-        
+        "httpx",
     ],
     entry_points={
         "console_scripts": [
