@@ -15,7 +15,6 @@ setup(
         "sslyze",
         "httpx",
         "PyYAML",
-        "gowitness",
     ],
     entry_points={
         "console_scripts": [
