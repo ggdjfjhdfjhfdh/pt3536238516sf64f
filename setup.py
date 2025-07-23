@@ -4,6 +4,11 @@ setup(
     name="pentest",
     version="1.0.0",
     packages=find_packages(),
+    include_package_data=True,
+    package_data={
+        'pentest': ['mitre_mapping.yaml'],
+        '': ['templates/*.html'],
+    },
     install_requires=[
         "redis",
         "rq",
