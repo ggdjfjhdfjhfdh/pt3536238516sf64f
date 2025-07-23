@@ -2,7 +2,9 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY services/api-fastapi/requirements.txt services/api-fastapi/
+RUN pip install --no-cache-dir -r requirements.txt \
+    -r services/api-fastapi/requirements.txt
 
 COPY . .
 ENV PYTHONPATH=/app

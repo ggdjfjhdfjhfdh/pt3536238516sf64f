@@ -46,10 +46,10 @@ WORKDIR /app
 # Copiar el código fuente
 COPY . .
 
-# Instalar el paquete pentest y dependencias de Python
-RUN pip install -e . \
-    && pip install --no-cache-dir dnstwist \
-    && pip install --no-cache-dir mailersend==0.6.0 reportlab==4.1.0 pdfkit
+# Instalar todas las dependencias de Python desde los archivos requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    -r services/api-fastapi/requirements.txt \
+    && pip install --no-cache-dir .
 
 # Crear directorios necesarios
 RUN mkdir -p /app/templates /tmp/scan_results
