@@ -48,6 +48,7 @@ ENV PYTHONPATH=/app:$PYTHONPATH
 
 # Copiar el código fuente
 COPY pentest pentest
+COPY templates pentest/templates
 COPY . .
 
 # Instalar todas las dependencias de Python desde los archivos requirements.txt
