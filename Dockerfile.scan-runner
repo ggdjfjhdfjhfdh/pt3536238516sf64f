@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y bsdextrautils && apt-get clean && rm -r
 WORKDIR /app
 
 # Copiar el código fuente
+COPY pentest pentest
 COPY . .
 
 # Instalar todas las dependencias de Python desde los archivos requirements.txt
