@@ -48,13 +48,12 @@ ENV PYTHONPATH=/app:$PYTHONPATH
 
 # Copiar el código fuente
 COPY pentest pentest
-COPY templates templates
 COPY . .
 
 # Instalar todas las dependencias de Python desde los archivos requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     -r services/api-fastapi/requirements.txt \
-    && pip install --no-cache-dir .
+    && pip install --no-cache-dir --force-reinstall .
 
 
 
