@@ -83,7 +83,7 @@ async def stripe_webhook(req: Request):
         email   = data["customer_details"]["email"]
 
         # ► Encolar trabajo RQ
-        q.enqueue('pentest.core.generate_pdf', domain=dominio, recipient_email=email)
+        q.enqueue('pentest.core._run_scan_job', domain=dominio, recipient_email=email)
         print(f"Published scan for {dominio} → {email}")
 
     return {"ok": True}
