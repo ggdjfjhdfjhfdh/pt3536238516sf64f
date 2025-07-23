@@ -43,6 +43,9 @@ RUN apt-get update && apt-get install -y bsdextrautils && apt-get clean && rm -r
 # Set working directory
 WORKDIR /app
 
+# Configurar PYTHONPATH para que Python pueda encontrar el paquete pentest
+ENV PYTHONPATH=/app:$PYTHONPATH
+
 # Copiar el código fuente
 COPY pentest pentest
 COPY . .
@@ -51,6 +54,10 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt \
     -r services/api-fastapi/requirements.txt \
     && pip install --no-cache-dir .
+
+# Debugging: List contents of installed pentest package
+RUN ls -l /usr/local/lib/python3.9/site-packages/pentest/
+RUN ls -l /usr/local/lib/python3.9/site-packages/pentest/templates/
 
 # Crear directorios necesarios
 RUN mkdir -p /app/templates /tmp/scan_results
