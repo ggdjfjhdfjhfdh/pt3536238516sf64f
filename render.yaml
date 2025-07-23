@@ -2,6 +2,14 @@
 # ===============================================
 
 services:
+  # ─────────── Redis (Key-Value) ───────────
+  - name: redis
+    type: redis  # Use 'redis' instead of 'keyvalue' for better compatibility
+    plan: starter
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: internal only
+
   # ─────────── API FastAPI (web) ───────────
   - name: api-fastapi
     type: web
@@ -10,7 +18,7 @@ services:
     dockerContext: services/api-fastapi
     plan: starter            # Starter - 512 MB / 0,5 CPU
     envVars:
-      - key: STRIPE_SECRET         # los cinco los sigues metiendo a mano
+      - key: STRIPE_SECRET
         sync: false
       - key: STRIPE_PRICE_ID
         sync: false
@@ -20,17 +28,12 @@ services:
         sync: false
       - key: CANCEL_URL
         sync: false
-      # Redis interno (DNS = redis)
+      # Use Render's internal service discovery for Redis
       - key: REDIS_URL
-        value: redis://red-d1ukfuer433s73es9br0:6379
-
-  # ─────────── Redis (Key-Value) ───────────
-  - name: redis
-    type: keyvalue            # «redis» es alias obsoleto, usa keyvalue
-    plan: starter
-    ipAllowList:              # Render exige al menos UNA entrada
-      - source: 0.0.0.0/0     # déjalo abierto; sólo tu VPC interna podrá verlo
-        description: internal only
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
 
   # ─────────── Worker RQ (background) ──────
   - name: scan-runner
@@ -38,12 +41,16 @@ services:
     runtime: docker
     dockerfilePath: Dockerfile.scan-runner
     dockerContext: .
-    plan: standard    # Cambiado a standard para más recursos (1GB RAM / 1 CPU)
-    cap_add: ["NET_RAW"]
+    plan: standard    # Standard for more resources (1GB RAM / 1 CPU)
+    # Removed cap_add as it's not supported in Render worker services
     envVars:
+      # Use Render's internal service discovery for Redis
       - key: REDIS_URL
-        value: redis://red-d1ukfuer433s73es9br0:6379
+        fromService:
+          type: redis
+          name: redis
+          property: connectionString
       - key: MAILERSEND_API_KEY
-        sync: false    # Configurar en el dashboard de Render
+        sync: false    # Configure in Render dashboard
       - key: FROM_EMAIL
         value: informes@auditatetumismo.es
