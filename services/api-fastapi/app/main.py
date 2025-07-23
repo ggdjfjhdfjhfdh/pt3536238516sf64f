@@ -28,7 +28,7 @@ WHSEC          = os.getenv("STRIPE_WEBHOOK_SECRET")
 # ---------- Cola Redis / RQ ----------
 REDIS_URL = os.getenv("REDIS_URL", "redis://red-d20a0bvgi27c73cbmk3g:6379")
 rds = redis.from_url(REDIS_URL)
-q = Queue(connection=rds)
+q = Queue('scan_queue', connection=rds)
 
 # ---------- Endpoints ----------
 @app.get("/scan/{job_id}/status")
