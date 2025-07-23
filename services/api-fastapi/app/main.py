@@ -3,7 +3,8 @@ import redis
 import json
 import asyncio
 import stripe
-from rq import Queue, Connection
+from rq import Queue
+from rq.connections import Connection
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
