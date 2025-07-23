@@ -25,7 +25,7 @@ PRICE_ID       = os.getenv("STRIPE_PRICE_ID")
 WHSEC          = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # ---------- Cola Redis / RQ ----------
-REDIS_URL = os.getenv("REDIS_URL", "redis://red-d1ukfuer433s73es9br0:6379")
+REDIS_URL = os.getenv("REDIS_URL", "redis://red-d20a0bvgi27c73cbmk3g:6379")
 rds = redis.from_url(REDIS_URL)
 
 # ---------- Endpoints ----------
