@@ -4,7 +4,6 @@ import json
 import asyncio
 import stripe
 from rq import Queue
-from ..pentest.core import enqueue_scan
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -84,7 +83,7 @@ async def stripe_webhook(req: Request):
         email   = data["customer_details"]["email"]
 
         # ► Encolar trabajo RQ
-        q.enqueue(enqueue_scan, domain=dominio, recipient_email=email)
+        q.enqueue('pentest.core.generate_pdf', domain=dominio, recipient_email=email)
         print(f"Published scan for {dominio} → {email}")
 
     return {"ok": True}
