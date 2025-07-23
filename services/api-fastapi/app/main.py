@@ -4,7 +4,7 @@ import json
 import asyncio
 import stripe
 from rq import Queue
-from pentest.core import enqueue_scan
+from ..pentest.core import enqueue_scan
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
