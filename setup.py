@@ -6,6 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "redis",
+        "rq",
         "requests",
         "jinja2",
         "weasyprint",

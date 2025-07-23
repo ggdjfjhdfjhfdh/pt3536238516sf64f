@@ -3,6 +3,7 @@ import redis
 import json
 import asyncio
 import stripe
+from rq import Queue, Connection
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +28,7 @@ WHSEC          = os.getenv("STRIPE_WEBHOOK_SECRET")
 # ---------- Cola Redis / RQ ----------
 REDIS_URL = os.getenv("REDIS_URL", "redis://red-d20a0bvgi27c73cbmk3g:6379")
 rds = redis.from_url(REDIS_URL)
+q = Queue(connection=rds)
 
 # ---------- Endpoints ----------
 @app.get("/scan/{job_id}/status")
@@ -80,8 +82,8 @@ async def stripe_webhook(req: Request):
 
         email   = data["customer_details"]["email"]
 
-        # ► Publicar en la cola BLPOP
-        rds.rpush("scan_queue", json.dumps({"domain": dominio, "email": email}))
+        # ► Encolar trabajo RQ
+        q.enqueue('pentest.core.generate_pdf', domain=dominio, recipient_email=email)
         print(f"Published scan for {dominio} → {email}")
 
     return {"ok": True}
