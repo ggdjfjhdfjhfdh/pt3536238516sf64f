@@ -33,13 +33,15 @@ RUN wkhtmltopdf --version || echo "wkhtmltopdf command not found"
 
 RUN go clean -modcache
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-RUN go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 RUN go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+
+# Install httpx with CLI dependencies via pip
+RUN pip install 'httpx[cli]'
 
 # Verificar que las herramientas estén instaladas correctamente
 RUN echo "Verificando herramientas instaladas:" \
     && which subfinder && subfinder -version \
-    && which httpx && httpx -version \
+    && httpx --version \
     && which nuclei && nuclei -version \
     && echo "Todas las herramientas verificadas correctamente"
 
