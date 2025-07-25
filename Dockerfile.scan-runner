@@ -35,15 +35,12 @@ RUN go clean -modcache
 RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 RUN go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 RUN go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-# Instalar amass v4 que tiene el comando enum
-RUN go install -v github.com/owasp-amass/amass/v4/...@latest
 
 # Verificar que las herramientas estén instaladas correctamente
 RUN echo "Verificando herramientas instaladas:" \
     && which subfinder && subfinder -version \
     && which httpx && httpx -version \
     && which nuclei && nuclei -version \
-    && which amass && amass -version \
     && echo "Todas las herramientas verificadas correctamente"
 
 
