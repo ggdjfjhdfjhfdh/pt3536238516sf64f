@@ -406,7 +406,7 @@
                         <li>
                             <strong>Email:</strong> {{ leak.email }}<br>
                             <strong>Brechas Encontradas:</strong> {{ leak.count }}<br>
-                            <strong>Severidad:</strong> <span class="severity-{{ leak.severity.lower() }}">{{ leak.severity }}</span><br>
+                            {% if leak.severity is defined %}<strong>Severidad:</strong> <span class="severity-{{ leak.severity.lower() }}">{{ leak.severity }}</span><br>{% endif %}
                             <strong>Detalles:</strong>
                             <ul>
                                 {% for breach in leak.breaches %}
@@ -472,7 +472,7 @@
                             <strong>ID CVE:</strong> {{ cve.cve_id }}<br>
                             <strong>Tecnología Afectada:</strong> {{ cve.affected_technology }}<br>
                             <strong>Descripción:</strong> {{ cve.description | default('N/A') }}<br>
-                            <strong>Severidad:</strong> <span class="severity-{{ cve.severity.lower() }}">{{ cve.severity }}</span>
+                            {% if cve.severity is defined %}<strong>Severidad:</strong> <span class="severity-{{ cve.severity.lower() }}">{{ cve.severity }}</span>{% endif %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -503,7 +503,7 @@
                         <li>
                             <strong>Tipo:</strong> {{ finding.type }}<br>
                             <strong>Descripción:</strong> {{ finding.description }}<br>
-                            <strong>Severidad:</strong> <span class="severity-{{ finding.severity.lower() }}">{{ finding.severity }}</span>
+                            {% if finding.severity is defined %}<strong>Severidad:</strong> <span class="severity-{{ finding.severity.lower() }}">{{ finding.severity }}</span>{% endif %}
                         </li>
                     {% endfor %}
                 </ul>
