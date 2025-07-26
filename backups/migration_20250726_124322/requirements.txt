@@ -1,0 +1,36 @@
+# Dependencias principales
+redis==5.0.4
+requests==2.32.3
+Jinja2==3.1.4
+weasyprint==62.2
+
+mailersend==0.6.0
+rq
+
+# Herramientas de escaneo
+dnstwist
+dnspython
+sslyze
+
+httpx==0.27.0
+
+# Detección de tecnologías mejorada
+PyYAML==6.0.1
+requests[security]>=2.32.0
+urllib3>=2.0.0
+
+# Utilidades
+python-dotenv
+pytz
+pandas==2.2.2
+cryptography==42.0.5
+python-dateutil==2.9.0
+reportlab==4.1.0
+typing-extensions>=4.0.0
+defusedxml
+
+# Nuevas dependencias para mejoras de detección
+# Nota: Wappalyzer CLI y WhatWeb deben instalarse por separado:
+# npm install -g wappalyzer
+# apt-get install whatweb (Linux) o brew install whatweb (macOS)
+# Para Windows, descargar desde repositorios oficiales
