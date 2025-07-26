@@ -1,600 +1,988 @@
-<!doctype html>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <style>
-        .cover-page {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            text-align: center;
-            page-break-after: always;
-        }
-        .cover-page h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
-        }
-        .cover-page h2 {
-            font-size: 1.5em;
-            margin-bottom: 50px;
-        }
-        .cover-page p {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-        .table-of-contents {
-            page-break-after: always;
-            padding-top: 50px;
-        }
-        .table-of-contents h1 {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        .table-of-contents ul {
-            list-style: none;
-            padding: 0;
-        }
-        .table-of-contents ul li {
-            margin-bottom: 10px;
-            font-size: 1.1em;
-        }
-        .table-of-contents ul li a {
-            text-decoration: none;
-            color: #333;
-            display: block;
-            padding: 5px;
-            border-bottom: 1px dotted #ccc;
-        }
-        .table-of-contents ul li a:hover {
-            color: #007bff;
-        }
-    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe de Pentesting - {{ domain }}</title>
+    <title>Informe de Seguridad - {{ domain }}</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
+        /* Variables CSS */
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --critical-color: #dc2626;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-accent: #f3f4f6;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Reset y base */
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        /* Layout principal */
         .container {
-            width: 80%;
-            margin: 20px auto;
-            background: #fff;
-            padding: 30px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow);
         }
-        header {
-            background-color: #003366;
-            color: #fff;
-            padding: 20px 0;
+
+        /* Portada */
+        .cover-page {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 80px 40px;
             text-align: center;
-            border-radius: 8px 8px 0 0;
+            page-break-after: always;
         }
-        header h1 {
-            margin: 0;
-            font-size: 2.5em;
+
+        .cover-page h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
         }
-        header p {
-            margin: 5px 0 0;
-            font-size: 1.1em;
+
+        .cover-page .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
         }
-        h2 {
-            color: #003366;
-            border-bottom: 2px solid #003366;
-            padding-bottom: 10px;
-            margin-top: 30px;
-            font-size: 1.8em;
+
+        .cover-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
-        h3 {
-            color: #0055aa;
-            margin-top: 20px;
-            font-size: 1.4em;
+
+        .cover-info-item {
+            text-align: center;
         }
+
+        .cover-info-item .label {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .cover-info-item .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Navegación */
+        .nav-section {
+            background: var(--bg-accent);
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .nav-item {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-item h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Contenido principal */
+        .main-content {
+            padding: 2rem;
+        }
+
+        /* Secciones */
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 3rem;
+            page-break-inside: avoid;
         }
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid var(--primary-color);
         }
-        .summary-table th, .summary-table td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        .summary-table th {
-            background-color: #e9ecef;
-            color: #333;
+
+        .section-icon {
+            width: 2rem;
+            height: 2rem;
+            margin-right: 1rem;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-weight: bold;
         }
-        .severity-critical { color: #dc3545; font-weight: bold; }
-        .severity-high { color: #fd7e14; font-weight: bold; }
-        .severity-medium { color: #ffc107; font-weight: bold; }
-        .severity-low { color: #17a2b8; }
-        .severity-info { color: #6c757d; }
-        .finding-list {
-            list-style: none;
-            padding: 0;
+
+        .section h2 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            font-weight: 700;
         }
-        .finding-list li {
-            background-color: #f8f9fa;
-            border: 1px solid #e2e6ea;
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 5px;
+
+        .section h3 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin: 2rem 0 1rem 0;
+            font-weight: 600;
         }
-        .finding-list li strong {
-            color: #003366;
+
+        /* Resumen ejecutivo */
+        .executive-summary {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
         }
-        footer {
+
+        .risk-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin: 1rem 0;
+        }
+
+        .risk-critical { background: #fef2f2; color: var(--critical-color); border: 2px solid var(--critical-color); }
+        .risk-high { background: #fef2f2; color: var(--danger-color); border: 2px solid var(--danger-color); }
+        .risk-medium { background: #fffbeb; color: var(--warning-color); border: 2px solid var(--warning-color); }
+        .risk-low { background: #f0fdf4; color: var(--success-color); border: 2px solid var(--success-color); }
+
+        /* Métricas clave */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
             text-align: center;
-            padding: 20px;
-            margin-top: 40px;
-            color: #777;
-            font-size: 0.9em;
-            border-top: 1px solid #eee;
+            transition: transform 0.2s;
         }
-        .logo {
-            max-width: 150px;
-            margin-bottom: 10px;
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
         }
-        .recommendation {
-            background-color: #e6f7ff;
-            border-left: 5px solid #007bff;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
         }
-        .recommendation h4 {
-            color: #007bff;
-            margin-top: 0;
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Tablas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .data-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-accent);
+        }
+
+        /* Severidades */
+        .severity {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .severity-critical { background: #fef2f2; color: var(--critical-color); }
+        .severity-high { background: #fef2f2; color: var(--danger-color); }
+        .severity-medium { background: #fffbeb; color: var(--warning-color); }
+        .severity-low { background: #f0fdf4; color: var(--success-color); }
+        .severity-info { background: #f0f9ff; color: var(--secondary-color); }
+
+        /* Hallazgos */
+        .finding-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .finding-card:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .finding-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .finding-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .finding-detail .label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .finding-detail .value {
+            font-weight: 500;
+        }
+
+        /* Recomendaciones */
+        .recommendation-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .recommendation-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-content {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .recommendation-section {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        .recommendation-section h5 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* MITRE ATT&CK Heatmap */
+        .mitre-heatmap {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .mitre-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1px;
+            background: var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .mitre-tactic {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .mitre-technique {
+            background: var(--bg-accent);
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mitre-technique.detected {
+            background: var(--danger-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        /* Utilidades */
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 2rem; }
+        .mt-4 { margin-top: 2rem; }
+        .p-4 { padding: 2rem; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .cover-page h1 { font-size: 2.5rem; }
+            .main-content { padding: 1rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .finding-details { grid-template-columns: 1fr; }
+        }
+
+        /* Print styles */
+        @media print {
+            .nav-section { display: none; }
+            .section { page-break-inside: avoid; }
+            .cover-page { page-break-after: always; }
         }
     </style>
 </head>
 <body>
+    <!-- Portada -->
     <div class="cover-page">
-        <h1>Informe de Pentesting</h1>
-        <h2>para {{ domain }}</h2>
-        <p><strong>Fecha del Informe:</strong> {{ date }}</p>
-        <p><strong>Generado por:</strong> Pentest Express</p>
-        <p><strong>Versión:</strong> 1.0</p>
-    </div>
-
-    <div class="table-of-contents">
-        <h1>Índice</h1>
-        <ul>
-            <li><a href="#resumen-ejecutivo">Resumen Ejecutivo</a></li>
-            <li><a href="#metodologia">Metodología</a></li>
-            <li><a href="#hallazgos-detallados">Hallazgos Detallados</a>
-                <ul>
-                    <li><a href="#nuclei-findings">Hallazgos de Nuclei</a></li>
-
-                    <li><a href="#hibp-findings">Hallazgos de HIBP (Have I Been Pwned)</a></li>
-                    <li><a href="#typosquatting-findings">Hallazgos de Typosquatting</a></li>
-                    <li><a href="#cve-findings">Hallazgos de CVEs</a></li>
-                    <li><a href="#nmap-findings">Hallazgos de Nmap</a></li>
-                    <li><a href="#security-config-findings">Hallazgos de Configuración de Seguridad</a></li>
-                </ul>
-            </li>
-            <li><a href="#recomendaciones">Recomendaciones</a></li>
-            <li><a href="#descargo-de-responsabilidad">Descargo de Responsabilidad</a></li>
-            <li><a href="#glosario-de-terminos">Glosario de Términos</a></li>
-            <li><a href="#contacto-y-soporte">Contacto y Soporte</a></li>
-        </ul>
+        <h1>Informe de Seguridad</h1>
+        <div class="subtitle">Análisis Integral de Ciberseguridad</div>
+        <div class="cover-info">
+            <div class="cover-info-item">
+                <div class="label">Dominio Objetivo</div>
+                <div class="value">{{ domain }}</div>
+            </div>
+            <div class="cover-info-item">
+                <div class="label">Fecha del Análisis</div>
+                <div class="value">{{ date }}</div>
+            </div>
+            <div class="cover-info-item">
+                <div class="label">Nivel de Riesgo</div>
+                <div class="value">{{ risk_level }}</div>
+            </div>
+            <div class="cover-info-item">
+                <div class="label">Puntuación de Riesgo</div>
+                <div class="value">{{ risk_score }}/100</div>
+            </div>
+        </div>
     </div>
 
     <div class="container">
-    <div class="container">
-        <header>
-            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cuc2NoZW1hc2NoZW1hcy5vcmcvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyQzIgMTcuNTIgNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMkMyMiA2LjQ4IDE3LjUyIDIgMTIgMlpNMTIgNEwxOSAxMkwxMiAyMEw1IDEyTDEyIDRaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0xMiA2TDE3IDEyTDEyIDE4TDcgMTJMMTIgNloiIGZpbGw9IiMwMDMzNjYiLz4KPC9zdmc+Cg==" alt="Logo de Pentest Express" class="logo">
-            <h1>Informe de Pentesting</h1>
-            <p>Análisis de Seguridad para {{ domain }}</p>
-            <p>Fecha del Informe: {{ date }}</p>
-        </header>
-
-        <div class="section" id="resumen-ejecutivo">
-            <h2>Resumen Ejecutivo</h2>
-            <p>{{ executive_summary_text }}</p>
-            
-            <h3>Nivel de Riesgo Global: <span class="severity-{{ risk_level.lower() }}">{{ risk_level }}</span> (Puntuación: {{ risk_score }})</h3>
-
-            <h3>Métricas Clave</h3>
-            <table class="summary-table">
-                <thead>
-                    <tr>
-                        <th>Métrica</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Subdominios Encontrados</td>
-                        <td>{{ subdomains_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Hosts Activos</td>
-                        <td>{{ httpx_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Vulnerabilidades Nuclei (Críticas/Altas)</td>
-                        <td>{{ nuclei_critical_high_count }}</td>
-                    </tr>
-
-                    <tr>
-                        <td>Emails Comprometidos (HIBP)</td>
-                        <td>{{ leaks_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Dominios Typosquatting</td>
-                        <td>{{ typosquats_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>CVEs Detectados</td>
-                        <td>{{ cves_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Puertos Abiertos (Nmap)</td>
-                        <td>{{ nmap_open_ports_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Hallazgos de Configuración de Seguridad</td>
-                        <td>{{ security_config_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Directorios/Archivos Expuestos (Dir Brute)</td>
-                        <td>{{ dir_brute_count }}</td>
-                    </tr>
-                    <tr>
-                        <td>Capturas de Pantalla Generadas</td>
-                        <td>{{ screenshots_count }}</td>
-                    </tr>
-
-                </tbody>
-            </table>
-
-            <h3>Conteo de Vulnerabilidades por Severidad (Nuclei)</h3>
-            <table class="summary-table">
-                <thead>
-                    <tr>
-                        <th>Severidad</th>
-                        <th>Cantidad</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="severity-critical">Crítica</span></td>
-                        <td>{{ nuclei_severity_counts.critical }}</td>
-                    </tr>
-                    <tr>
-                        <td><span class="severity-high">Alta</span></td>
-                        <td>{{ nuclei_severity_counts.high }}</td>
-                    </tr>
-                    <tr>
-                        <td><span class="severity-medium">Media</span></td>
-                        <td>{{ nuclei_severity_counts.medium }}</td>
-                    </tr>
-                    <tr>
-                        <td><span class="severity-low">Baja</span></td>
-                        <td>{{ nuclei_severity_counts.low }}</td>
-                    </tr>
-                    <tr>
-                        <td><span class="severity-info">Informacional</span></td>
-                        <td>{{ nuclei_severity_counts.info }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Navegación -->
+        <div class="nav-section">
+            <h2 class="text-center mb-4">Índice del Informe</h2>
+            <div class="nav-grid">
+                <a href="#resumen-ejecutivo" class="nav-item">
+                    <h3>📊 Resumen Ejecutivo</h3>
+                    <p>Visión general del estado de seguridad y riesgos principales</p>
+                </a>
+                <a href="#metricas-clave" class="nav-item">
+                    <h3>📈 Métricas Clave</h3>
+                    <p>Indicadores principales y estadísticas del análisis</p>
+                </a>
+                <a href="#hallazgos-tecnicos" class="nav-item">
+                    <h3>🔍 Hallazgos Técnicos</h3>
+                    <p>Detalles técnicos de vulnerabilidades y exposiciones</p>
+                </a>
+                <a href="#recomendaciones" class="nav-item">
+                    <h3>💡 Recomendaciones</h3>
+                    <p>Acciones prioritarias para mejorar la seguridad</p>
+                </a>
+                <a href="#metodologia" class="nav-item">
+                    <h3>⚙️ Metodología</h3>
+                    <p>Herramientas y procesos utilizados en el análisis</p>
+                </a>
+                <a href="#mitre-attack" class="nav-item">
+                    <h3>🎯 MITRE ATT&CK</h3>
+                    <p>Mapeo de técnicas de ataque identificadas</p>
+                </a>
+            </div>
         </div>
 
-        <div class="section" id="metodologia">
-            <h2>Metodología</h2>
-            <p>El proceso de pentesting se llevó a cabo siguiendo una metodología integral que abarca diversas fases para asegurar una cobertura exhaustiva del dominio objetivo. A continuación, se detallan las principales etapas y las herramientas utilizadas:</p>
+        <div class="main-content">
+            <!-- Resumen Ejecutivo -->
+            <div class="section" id="resumen-ejecutivo">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <h2>Resumen Ejecutivo</h2>
+                </div>
+                
+                <div class="executive-summary">
+                    <h3>Estado General de Seguridad</h3>
+                    <p>{{ executive_summary_text }}</p>
+                    
+                    <div class="text-center mt-4">
+                        <div class="risk-indicator risk-{{ risk_level.lower() }}">
+                            🚨 Nivel de Riesgo: {{ risk_level }} ({{ risk_score }}/100)
+                        </div>
+                    </div>
+                </div>
 
-            <h3>1. Reconocimiento y Recopilación de Información</h3>
-            <ul>
-                <li><strong>Subdominios:</strong> Se utilizó <code>Amass</code> y otras técnicas de OSINT para descubrir subdominios asociados al dominio principal, ampliando la superficie de ataque a evaluar.</li>
-                <li><strong>Hosts Activos y Huella Digital:</strong> Se empleó <code>httpx</code> para identificar hosts activos, determinar sus puertos HTTP/S, y recopilar información sobre tecnologías utilizadas (servidores web, frameworks, etc.).</li>
-            </ul>
+                <h3>Hallazgos Principales</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ nuclei_critical_high_count }}</div>
+                        <div class="metric-label">Vulnerabilidades Críticas/Altas</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ nmap_open_ports_count }}</div>
+                        <div class="metric-label">Puertos Abiertos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ leaks_count }}</div>
+                        <div class="metric-label">Credenciales Comprometidas</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ cves_count }}</div>
+                        <div class="metric-label">CVEs Identificados</div>
+                    </div>
+                </div>
+            </div>
 
-            <h3>2. Escaneo de Vulnerabilidades</h3>
-            <ul>
-                <li><strong>Vulnerabilidades Conocidas (Nuclei):</strong> Se ejecutó <code>Nuclei</code> con una amplia gama de plantillas para detectar vulnerabilidades comunes, configuraciones erróneas, y exposiciones de información en los activos identificados.</li>
+            <!-- Métricas Clave -->
+            <div class="section" id="metricas-clave">
+                <div class="section-header">
+                    <div class="section-icon">📈</div>
+                    <h2>Métricas Clave del Análisis</h2>
+                </div>
 
-                <li><strong>Credenciales Filtradas (HIBP):</strong> Se consultó la base de datos de Have I Been Pwned (HIBP) para verificar si alguna dirección de correo electrónico asociada al dominio ha sido comprometida en brechas de seguridad conocidas.</li>
-                <li><strong>Typosquatting:</strong> Se utilizó <code>dnstwist</code> para identificar dominios similares al objetivo que podrían ser usados para ataques de phishing o suplantación de identidad.</li>
-                <li><strong>CVEs:</strong> Se buscaron Common Vulnerabilities and Exposures (CVEs) relevantes para las tecnologías detectadas, evaluando la presencia de vulnerabilidades conocidas y sus posibles impactos.</li>
-                <li><strong>Escaneo de Puertos (Nmap):</strong> Se realizó un escaneo de puertos con <code>Nmap</code> para identificar puertos abiertos, servicios en ejecución y sus versiones, proporcionando una visión de la exposición de la red.</li>
-                <li><strong>Configuración de Seguridad:</strong> Se analizaron cabeceras HTTP y otras configuraciones del servidor web para identificar posibles debilidades como la exposición de información sensible o la falta de políticas de seguridad.</li>
-            </ul>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ subdomains_count }}</div>
+                        <div class="metric-label">Subdominios Descubiertos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ httpx_count }}</div>
+                        <div class="metric-label">Hosts Activos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ typosquats_count }}</div>
+                        <div class="metric-label">Dominios Typosquatting</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ security_config_count }}</div>
+                        <div class="metric-label">Configuraciones Inseguras</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ dir_brute_count }}</div>
+                        <div class="metric-label">Directorios Expuestos</div>
+                    </div>
+                </div>
 
-            <h3>3. Análisis y Reporte</h3>
-            <ul>
-                <li><strong>Correlación de Hallazgos:</strong> Los resultados de todas las herramientas se correlacionaron para obtener una visión unificada de la postura de seguridad.</li>
-                <li><strong>Evaluación de Riesgos:</strong> Cada hallazgo se evaluó en términos de severidad y probabilidad de explotación para determinar el riesgo global.</li>
-                <li><strong>Recomendaciones:</strong> Se generaron recomendaciones claras y accionables para mitigar las vulnerabilidades identificadas, priorizando aquellas con mayor impacto.</li>
-            </ul>
-        </div>
+                <h3>Distribución de Vulnerabilidades por Severidad</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Severidad</th>
+                            <th>Cantidad</th>
+                            <th>Porcentaje</th>
+                            <th>Prioridad de Remediación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="severity severity-critical">Crítica</span></td>
+                            <td>{{ nuclei_severity_counts.critical }}</td>
+                            <td>{% if nuclei_severity_counts.critical > 0 %}{{ "%.1f"|format((nuclei_severity_counts.critical / (nuclei_severity_counts.critical + nuclei_severity_counts.high + nuclei_severity_counts.medium + nuclei_severity_counts.low + nuclei_severity_counts.info)) * 100) }}%{% else %}0%{% endif %}</td>
+                            <td>Inmediata (0-24h)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity severity-high">Alta</span></td>
+                            <td>{{ nuclei_severity_counts.high }}</td>
+                            <td>{% if nuclei_severity_counts.high > 0 %}{{ "%.1f"|format((nuclei_severity_counts.high / (nuclei_severity_counts.critical + nuclei_severity_counts.high + nuclei_severity_counts.medium + nuclei_severity_counts.low + nuclei_severity_counts.info)) * 100) }}%{% else %}0%{% endif %}</td>
+                            <td>Urgente (1-7 días)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity severity-medium">Media</span></td>
+                            <td>{{ nuclei_severity_counts.medium }}</td>
+                            <td>{% if nuclei_severity_counts.medium > 0 %}{{ "%.1f"|format((nuclei_severity_counts.medium / (nuclei_severity_counts.critical + nuclei_severity_counts.high + nuclei_severity_counts.medium + nuclei_severity_counts.low + nuclei_severity_counts.info)) * 100) }}%{% else %}0%{% endif %}</td>
+                            <td>Moderada (1-4 semanas)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity severity-low">Baja</span></td>
+                            <td>{{ nuclei_severity_counts.low }}</td>
+                            <td>{% if nuclei_severity_counts.low > 0 %}{{ "%.1f"|format((nuclei_severity_counts.low / (nuclei_severity_counts.critical + nuclei_severity_counts.high + nuclei_severity_counts.medium + nuclei_severity_counts.low + nuclei_severity_counts.info)) * 100) }}%{% else %}0%{% endif %}</td>
+                            <td>Planificada (1-3 meses)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="severity severity-info">Informacional</span></td>
+                            <td>{{ nuclei_severity_counts.info }}</td>
+                            <td>{% if nuclei_severity_counts.info > 0 %}{{ "%.1f"|format((nuclei_severity_counts.info / (nuclei_severity_counts.critical + nuclei_severity_counts.high + nuclei_severity_counts.medium + nuclei_severity_counts.low + nuclei_severity_counts.info)) * 100) }}%{% else %}0%{% endif %}</td>
+                            <td>Opcional</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="section" id="hallazgos-detallados">
-            <h2>Hallazgos Detallados</h2>
-
-            <h3>Mini-Heatmap MITRE ATT&CK</h3>
-            <style>
-                .mitre-heatmap {
-                    display: grid;
-                    --mitre-tactic-count: {{ mitre_tactics | length }};
-                    grid-template-columns: repeat(var(--mitre-tactic-count), 1fr);
-                    gap: 2px;
-                    width: 100%;
-                    border: 1px solid #ccc;
-                    margin-bottom: 20px;
-                }
-                .mitre-tactic-header {
-                    background-color: #003366;
-                    color: white;
-                    font-weight: bold;
-                    padding: 5px;
-                    text-align: center;
-                    font-size: 0.8em;
-                    word-wrap: break-word;
-                }
-                .mitre-technique-cell {
-                    background-color: #f0f0f0;
-                    border: 1px solid #e0e0e0;
-                    padding: 5px;
-                    text-align: center;
-                    font-size: 0.7em;
-                    min-height: 30px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    word-wrap: break-word;
-                }
-                .mitre-technique-cell.detected {
-                    background-color: #dc3545; /* Rojo para detectado */
-                    color: white;
-                    font-weight: bold;
-                }
-            </style>
-            <div class="mitre-heatmap">
-                {% for tactic in mitre_tactics %}
-                    <div class="mitre-tactic-header">{{ tactic }}</div>
-                {% endfor %}
-
-                {% for tactic in mitre_tactics %}
-                    <div>
-                        {% for technique_id, detected in mitre_heatmap_data[tactic].items() %}
-                            <div class="mitre-technique-cell {% if detected %}detected{% endif %}">
-                                {{ technique_id }}
+            <!-- MITRE ATT&CK -->
+            <div class="section" id="mitre-attack">
+                <div class="section-header">
+                    <div class="section-icon">🎯</div>
+                    <h2>Mapeo MITRE ATT&CK</h2>
+                </div>
+                
+                <p>El siguiente mapa de calor muestra las técnicas de ataque MITRE ATT&CK identificadas durante el análisis:</p>
+                
+                <div class="mitre-heatmap">
+                    <div class="mitre-grid">
+                        {% for tactic in mitre_tactics %}
+                            <div class="mitre-tactic">{{ tactic }}</div>
+                        {% endfor %}
+                        
+                        {% for tactic in mitre_tactics %}
+                            <div>
+                                {% for technique_id, detected in mitre_heatmap_data[tactic].items() %}
+                                    <div class="mitre-technique {% if detected %}detected{% endif %}">
+                                        {{ technique_id }}
+                                    </div>
+                                {% endfor %}
                             </div>
                         {% endfor %}
                     </div>
-                {% endfor %}
+                </div>
             </div>
 
-            <h3 id="nuclei-findings">Vulnerabilidades Nuclei</h3>
-            {% if nuclei_data %}
-                <ul class="finding-list">
+            <!-- Hallazgos Técnicos -->
+            <div class="section" id="hallazgos-tecnicos">
+                <div class="section-header">
+                    <div class="section-icon">🔍</div>
+                    <h2>Hallazgos Técnicos Detallados</h2>
+                </div>
+
+                <!-- Vulnerabilidades Nuclei -->
+                <h3>🚨 Vulnerabilidades de Aplicaciones Web</h3>
+                {% if nuclei_data %}
                     {% for finding in nuclei_data %}
-                        <li>
-                            <strong>Nombre:</strong> {{ finding.info.name }}<br>
-                            <strong>Severidad:</strong> <span class="severity-{{ finding.info.severity.lower() }}">{{ finding.info.severity }}</span><br>
-                            <strong>Host:</strong> {{ finding.host }}<br>
-                            <strong>Descripción:</strong> {{ finding.info.description | default('N/A') }}<br>
-                            <strong>Referencia:</strong> {{ finding.info.reference | default('N/A') }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron vulnerabilidades significativas con Nuclei.</p>
-            {% endif %}
-
-
-
-            <h3 id="hibp-findings">Credenciales Filtradas (Have I Been Pwned)</h3>
-            {% if leaks_data %}
-                <ul class="finding-list">
-                    {% for leak in leaks_data %}
-                        <li>
-                            <strong>Email:</strong> {{ leak.email }}<br>
-                            <strong>Brechas Encontradas:</strong> {{ leak.count }}<br>
-                            {% if leak.severity is defined %}<strong>Severidad:</strong> <span class="severity-{{ leak.severity.lower() }}">{{ leak.severity }}</span><br>{% endif %}
-                            <strong>Detalles:</strong>
-                            <ul>
-                                {% for breach in leak.breaches %}
-                                    <li>{{ breach.Name }} ({{ breach.Domain }}) - {{ breach.BreachDate }}</li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron credenciales filtradas para los correos comunes del dominio.</p>
-            {% endif %}
-
-            <h3 id="typosquatting-findings">Dominios Typosquatting</h3>
-            {% if typosquats_data %}
-                <ul class="finding-list">
-                    {% for typo in typosquats_data %}
-                        <li>
-                            <strong>Dominio Similar:</strong> {{ typo.domain }}<br>
-                            <strong>Distancia Levenshtein:</strong> {{ typo.distance }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron dominios de typosquatting.</p>
-            {% endif %}
-
-            <h3 id="cve-findings">CVEs Detectados</h3>
-            <h3 id="screenshots-findings">Capturas de Pantalla</h3>
-            {% if screenshots_data %}
-                <div class="screenshot-gallery">
-                    {% for screenshot in screenshots_data %}
-                        <div class="screenshot-item">
-                            <a href="{{ screenshot.path }}" target="_blank">
-                                <img src="{{ screenshot.path }}" alt="Captura de {{ screenshot.url }}">
-                            </a>
-                            <p>{{ screenshot.url }}</p>
+                        <div class="finding-card">
+                            <div class="finding-header">
+                                <div class="finding-title">{{ finding.info.name }}</div>
+                                <span class="severity severity-{{ finding.info.severity.lower() }}">{{ finding.info.severity }}</span>
+                            </div>
+                            <div class="finding-details">
+                                <div class="finding-detail">
+                                    <div class="label">Host Afectado</div>
+                                    <div class="value">{{ finding.host }}</div>
+                                </div>
+                                <div class="finding-detail">
+                                    <div class="label">Descripción</div>
+                                    <div class="value">{{ finding.info.description | default('No disponible') }}</div>
+                                </div>
+                                <div class="finding-detail">
+                                    <div class="label">Referencia</div>
+                                    <div class="value">{{ finding.info.reference | default('No disponible') }}</div>
+                                </div>
+                            </div>
                         </div>
                     {% endfor %}
-                </div>
-            {% else %}
-                <p>No se generaron capturas de pantalla.</p>
-            {% endif %}
-            {% if cves_data %}
-                <ul class="finding-list">
+                {% else %}
+                    <p>✅ No se identificaron vulnerabilidades significativas en aplicaciones web.</p>
+                {% endif %}
+
+                <!-- Puertos y Servicios -->
+                <h3>🌐 Puertos y Servicios Expuestos</h3>
+                {% if nmap_data %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Host</th>
+                                <th>Puerto/Protocolo</th>
+                                <th>Servicio</th>
+                                <th>Versión</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in nmap_data %}
+                                <tr>
+                                    <td>{{ item.host }}</td>
+                                    <td>{{ item.port }}/{{ item.protocol }}</td>
+                                    <td>{{ item.service }}</td>
+                                    <td>{{ item.product }} {{ item.version }} {{ item.extrainfo }}</td>
+                                    <td><span class="severity {% if item.state == 'open' %}severity-medium{% else %}severity-low{% endif %}">{{ item.state }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>✅ No se identificaron puertos abiertos o servicios expuestos relevantes.</p>
+                {% endif %}
+
+                <!-- Credenciales Comprometidas -->
+                <h3>🔐 Credenciales Comprometidas</h3>
+                {% if leaks_data %}
+                    {% for leak in leaks_data %}
+                        <div class="finding-card">
+                            <div class="finding-header">
+                                <div class="finding-title">{{ leak.email }}</div>
+                                <span class="severity severity-high">{{ leak.count }} brechas</span>
+                            </div>
+                            <div class="finding-details">
+                                <div class="finding-detail">
+                                    <div class="label">Brechas Identificadas</div>
+                                    <div class="value">
+                                        {% for breach in leak.breaches %}
+                                            <div>• {{ breach.Name }} ({{ breach.Domain }}) - {{ breach.BreachDate }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>✅ No se encontraron credenciales comprometidas en brechas conocidas.</p>
+                {% endif %}
+
+                <!-- CVEs -->
+                <h3>🛡️ Vulnerabilidades CVE</h3>
+                {% if cves_data %}
                     {% for cve in cves_data %}
-                        <li>
-
-            <h3 id="dir-brute-findings">Directorios y Archivos Expuestos (Fuerza Bruta)</h3>
-            {% if dir_brute_data %}
-                <ul class="finding-list">
-                    {% for finding in dir_brute_data %}
-                        <li>
-                            <strong>URL:</strong> {{ finding.url }}<br>
-                            <strong>Estado:</strong> {{ finding.status }}<br>
-                            <strong>Longitud:</strong> {{ finding.length }}
-                        </li>
+                        <div class="finding-card">
+                            <div class="finding-header">
+                                <div class="finding-title">{{ cve.cve_id }}</div>
+                                {% if cve.severity %}<span class="severity severity-{{ cve.severity.lower() }}">{{ cve.severity }}</span>{% endif %}
+                            </div>
+                            <div class="finding-details">
+                                <div class="finding-detail">
+                                    <div class="label">Tecnología Afectada</div>
+                                    <div class="value">{{ cve.affected_technology }}</div>
+                                </div>
+                                <div class="finding-detail">
+                                    <div class="label">Descripción</div>
+                                    <div class="value">{{ cve.description | default('No disponible') }}</div>
+                                </div>
+                            </div>
+                        </div>
                     {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron directorios o archivos expuestos mediante fuerza bruta ligera.</p>
-            {% endif %}
-                            <strong>ID CVE:</strong> {{ cve.cve_id }}<br>
-                            <strong>Tecnología Afectada:</strong> {{ cve.affected_technology }}<br>
-                            <strong>Descripción:</strong> {{ cve.description | default('N/A') }}<br>
-                            {% if cve.severity is defined %}<strong>Severidad:</strong> <span class="severity-{{ cve.severity.lower() }}">{{ cve.severity }}</span>{% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se detectaron CVEs significativos.</p>
-            {% endif %}
+                {% else %}
+                    <p>✅ No se identificaron CVEs relevantes para las tecnologías detectadas.</p>
+                {% endif %}
 
-            <h3 id="nmap-findings">Puertos y Servicios Abiertos (Nmap)</h3>
-            {% if nmap_data %}
-                <ul class="finding-list">
-                    {% for item in nmap_data %}
-                        <li>
-                            <strong>Host:</strong> {{ item.host }}<br>
-                            <strong>Puerto:</strong> {{ item.port }}/{{ item.protocol }}<br>
-                            <strong>Servicio:</strong> {{ item.service }} ({{ item.product }} {{ item.version }} {{ item.extrainfo }})<br>
-                            <strong>Estado:</strong> {{ item.status }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron puertos abiertos o servicios relevantes.</p>
-            {% endif %}
+                <!-- Typosquatting -->
+                <h3>🎭 Dominios Typosquatting</h3>
+                {% if typosquats_data %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Dominio Similar</th>
+                                <th>Distancia Levenshtein</th>
+                                <th>Riesgo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for typo in typosquats_data %}
+                                <tr>
+                                    <td>{{ typo.domain }}</td>
+                                    <td>{{ typo.distance }}</td>
+                                    <td><span class="severity {% if typo.distance <= 2 %}severity-high{% elif typo.distance <= 4 %}severity-medium{% else %}severity-low{% endif %}">{% if typo.distance <= 2 %}Alto{% elif typo.distance <= 4 %}Medio{% else %}Bajo{% endif %}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>✅ No se identificaron dominios de typosquatting relevantes.</p>
+                {% endif %}
 
-            <h3 id="security-config-findings">Hallazgos de Configuración de Seguridad</h3>
-            {% if security_config_data %}
-                <ul class="finding-list">
+                <!-- Configuración de Seguridad -->
+                <h3>⚙️ Configuraciones de Seguridad</h3>
+                {% if security_config_data %}
                     {% for finding in security_config_data %}
-                        <li>
-                            <strong>Tipo:</strong> {{ finding.type }}<br>
-                            <strong>Descripción:</strong> {{ finding.description }}<br>
-                            {% if finding.severity is defined %}<strong>Severidad:</strong> <span class="severity-{{ finding.severity.lower() }}">{{ finding.severity }}</span>{% endif %}
-                        </li>
+                        <div class="finding-card">
+                            <div class="finding-header">
+                                <div class="finding-title">{{ finding.type }}</div>
+                                {% if finding.severity %}<span class="severity severity-{{ finding.severity.lower() }}">{{ finding.severity }}</span>{% endif %}
+                            </div>
+                            <div class="finding-details">
+                                <div class="finding-detail">
+                                    <div class="label">Descripción</div>
+                                    <div class="value">{{ finding.description }}</div>
+                                </div>
+                            </div>
+                        </div>
                     {% endfor %}
-                </ul>
-            {% else %}
-                <p>No se encontraron hallazgos de configuración de seguridad.</p>
-            {% endif %}
-        </div>
+                {% else %}
+                    <p>✅ No se identificaron configuraciones de seguridad problemáticas.</p>
+                {% endif %}
 
-        <div class="section" id="recomendaciones">
-            <h2>Recomendaciones</h2>
-            {% if recommendations %}
-                {% for rec in recommendations %}
-                    <div class="recommendation">
-                        <h4>{{ rec.title }}</h4>
-                        <p><strong>Descripción:</strong> {{ rec.description }}</p>
-                        <p><strong>Solución:</strong> {{ rec.solution }}</p>
+                <!-- Directorios Expuestos -->
+                <h3>📁 Directorios y Archivos Expuestos</h3>
+                {% if dir_brute_data %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Código de Estado</th>
+                                <th>Tamaño</th>
+                                <th>Riesgo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for finding in dir_brute_data %}
+                                <tr>
+                                    <td>{{ finding.url }}</td>
+                                    <td>{{ finding.status }}</td>
+                                    <td>{{ finding.length }} bytes</td>
+                                    <td><span class="severity {% if finding.status == 200 %}severity-medium{% else %}severity-low{% endif %}">{% if finding.status == 200 %}Medio{% else %}Bajo{% endif %}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>✅ No se identificaron directorios o archivos expuestos relevantes.</p>
+                {% endif %}
+            </div>
+
+            <!-- Recomendaciones -->
+            <div class="section" id="recomendaciones">
+                <div class="section-header">
+                    <div class="section-icon">💡</div>
+                    <h2>Recomendaciones Estratégicas</h2>
+                </div>
+
+                {% if recommendations %}
+                    {% for rec in recommendations %}
+                        <div class="recommendation-card">
+                            <h4 class="recommendation-title">{{ rec.title }}</h4>
+                            <div class="recommendation-content">
+                                <div class="recommendation-section">
+                                    <h5>📋 Descripción del Problema</h5>
+                                    <p>{{ rec.description }}</p>
+                                </div>
+                                <div class="recommendation-section">
+                                    <h5>🔧 Solución Recomendada</h5>
+                                    <p>{{ rec.solution }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="recommendation-card">
+                        <h4 class="recommendation-title">✅ Estado de Seguridad Óptimo</h4>
+                        <div class="recommendation-content">
+                            <div class="recommendation-section">
+                                <p>No se identificaron vulnerabilidades críticas que requieran atención inmediata. Se recomienda mantener las buenas prácticas de seguridad actuales y realizar análisis periódicos.</p>
+                            </div>
+                        </div>
                     </div>
-                {% endfor %}
-            {% else %}
-                <p>No se generaron recomendaciones específicas basadas en los hallazgos.</p>
-            {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Metodología -->
+            <div class="section" id="metodologia">
+                <div class="section-header">
+                    <div class="section-icon">⚙️</div>
+                    <h2>Metodología y Herramientas</h2>
+                </div>
+
+                <h3>🔍 Proceso de Análisis</h3>
+                <p>El análisis de seguridad se realizó siguiendo una metodología estructurada que abarca múltiples vectores de ataque y técnicas de reconocimiento:</p>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">🌐</div>
+                        <div class="metric-label">Reconocimiento<br>Subdominios y hosts activos</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">🔍</div>
+                        <div class="metric-label">Escaneo de Vulnerabilidades<br>Nuclei, CVEs, configuraciones</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">🛡️</div>
+                        <div class="metric-label">Análisis de Exposición<br>Puertos, servicios, directorios</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">📊</div>
+                        <div class="metric-label">Inteligencia de Amenazas<br>HIBP, typosquatting, MITRE</div>
+                    </div>
+                </div>
+
+                <h3>🛠️ Herramientas Utilizadas</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Herramienta</th>
+                            <th>Propósito</th>
+                            <th>Cobertura</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Amass</strong></td>
+                            <td>Descubrimiento de subdominios</td>
+                            <td>OSINT, DNS, certificados</td>
+                        </tr>
+                        <tr>
+                            <td><strong>httpx</strong></td>
+                            <td>Identificación de hosts activos</td>
+                            <td>HTTP/HTTPS, tecnologías</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nuclei</strong></td>
+                            <td>Escaneo de vulnerabilidades</td>
+                            <td>CVEs, configuraciones, exposiciones</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nmap</strong></td>
+                            <td>Escaneo de puertos y servicios</td>
+                            <td>TCP/UDP, detección de servicios</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Have I Been Pwned</strong></td>
+                            <td>Verificación de credenciales comprometidas</td>
+                            <td>Brechas de datos conocidas</td>
+                        </tr>
+                        <tr>
+                            <td><strong>dnstwist</strong></td>
+                            <td>Detección de typosquatting</td>
+                            <td>Dominios similares y variaciones</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>📋 Limitaciones del Análisis</h3>
+                <div class="recommendation-card">
+                    <div class="recommendation-content">
+                        <div class="recommendation-section">
+                            <h5>⚠️ Consideraciones Importantes</h5>
+                            <ul>
+                                <li>Este análisis representa una instantánea en el tiempo y la superficie de ataque puede cambiar</li>
+                                <li>Algunas vulnerabilidades pueden requerir autenticación o contexto específico para ser detectadas</li>
+                                <li>Los resultados se basan en fuentes públicas y herramientas automatizadas</li>
+                                <li>Se recomienda realizar análisis manuales adicionales para una cobertura completa</li>
+                                <li>Las pruebas se realizaron de forma no intrusiva para evitar impactos en los servicios</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="section disclaimer" id="descargo-de-responsabilidad">
-            <h2>Descargo de Responsabilidad</h2>
-            <p>Este informe de pentesting se genera automáticamente y se basa en las herramientas y metodologías descritas. Aunque se esfuerza por identificar la mayor cantidad posible de vulnerabilidades, no garantiza una cobertura del 100% de todas las posibles debilidades de seguridad. La seguridad es un proceso continuo y este informe representa una instantánea en el tiempo.</p>
-            <p>El cliente entiende y acepta que el pentesting, por su naturaleza, implica la simulación de ataques y puede, en raras ocasiones, causar interrupciones menores o resultados inesperados, aunque se toman todas las precauciones para evitarlo. El proveedor de este servicio no se hace responsable de cualquier daño directo o indirecto, pérdida de datos o interrupción del servicio que pueda surgir del uso de este informe o de las actividades de escaneo.</p>
-            <p>Las recomendaciones proporcionadas son generales y deben ser evaluadas y adaptadas a las necesidades específicas y al entorno del cliente. Es responsabilidad del cliente implementar las medidas de seguridad adecuadas y realizar pruebas adicionales si lo considera necesario.</p>
-            <p>Este informe es confidencial y está destinado únicamente al destinatario. No debe ser distribuido ni divulgado sin el consentimiento expreso por escrito del proveedor.</p>
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>📞 Contacto</h4>
+                    <p>soporte@pentestexpress.com</p>
+                    <p>+34 123 456 789</p>
+                </div>
+                <div class="footer-section">
+                    <h4>🌐 Web</h4>
+                    <p><a href="https://www.pentestexpress.com">www.pentestexpress.com</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>📄 Confidencialidad</h4>
+                    <p>Este informe es confidencial y está destinado únicamente al destinatario autorizado.</p>
+                </div>
+            </div>
+            <div class="text-center">
+                <p>&copy; 2024 Pentest Express. Todos los derechos reservados.</p>
+                <p>Informe generado automáticamente el {{ date }}</p>
+            </div>
         </div>
-
-        <div class="section" id="glosario-de-terminos">
-            <h2>Glosario de Términos</h2>
-            <dl>
-                <dt><strong>Pentesting (Prueba de Penetración):</strong></dt>
-                <dd>Simulación de un ataque cibernético contra un sistema informático para encontrar vulnerabilidades de seguridad.</dd>
-
-                <dt><strong>Vulnerabilidad:</strong></dt>
-                <dd>Una debilidad en un sistema que puede ser explotada por un atacante para comprometer la seguridad.</dd>
-
-                <dt><strong>Exploit:</strong></dt>
-                <dd>Un fragmento de software, datos o secuencia de comandos que aprovecha una vulnerabilidad para causar un comportamiento no deseado o imprevisto en el software o hardware de un ordenador.</dd>
-
-                <dt><strong>Severidad (Critical, High, Medium, Low, Informational):</strong></dt>
-                <dd>Clasificación del impacto potencial de una vulnerabilidad. Crítica es la más grave, Informacional la menos.</dd>
-
-                <dt><strong>OSINT (Open Source Intelligence):</strong></dt>
-                <dd>Recopilación de información de fuentes públicas y abiertas.</dd>
-
-                <dt><strong>Subdominio:</strong></dt>
-                <dd>Una división de un dominio principal (ej. blog.ejemplo.com es un subdominio de ejemplo.com).</dd>
-
-
-
-                <dt><strong>Nmap:</strong></dt>
-                <dd>Herramienta de código abierto utilizada para el descubrimiento de redes y auditorías de seguridad.</dd>
-
-                <dt><strong>Nuclei:</strong></dt>
-                <dd>Escáner de vulnerabilidades basado en plantillas, utilizado para enviar solicitudes a través de la red para detectar problemas de seguridad.</dd>
-
-                <dt><strong>HTTPX:</strong></dt>
-                <dd>Herramienta para probar múltiples servidores HTTP/S, identificar tecnologías y recopilar información.</dd>
-
-                <dt><strong>HIBP (Have I Been Pwned):</strong></dt>
-                <dd>Servicio que permite a los usuarios verificar si sus datos personales han sido comprometidos en brechas de seguridad.</dd>
-
-                <dt><strong>Typosquatting:</strong></dt>
-                <dd>Una forma de ciberocupación que se basa en errores tipográficos cometidos por los usuarios de Internet.</dd>
-
-                <dt><strong>CVE (Common Vulnerabilities and Exposures):</strong></dt>
-                <dd>Un diccionario de vulnerabilidades de seguridad de la información conocidas públicamente.</dd>
-
-                <dt><strong>Configuración de Seguridad:</strong></dt>
-                <dd>Ajustes y políticas implementadas para proteger un sistema o aplicación de amenazas.</dd>
-            </dl>
-        </div>
-
-        <div class="section" id="contacto-y-soporte">
-             <h2>Contacto y Soporte</h2>
-             <p>Si tiene alguna pregunta sobre este informe o necesita asistencia adicional con la seguridad de su sistema, no dude en ponerse en contacto con nuestro equipo de soporte:</p>
-             <ul>
-                 <li><strong>Correo Electrónico:</strong> soporte@pentestexpress.com</li>
-                 <li><strong>Teléfono:</strong> +34 123 456 789</li>
-                 <li><strong>Sitio Web:</strong> <a href="https://www.pentestexpress.com">www.pentestexpress.com</a></li>
-             </ul>
-             <p>Estamos aquí para ayudarle a fortalecer su postura de seguridad.</p>
-         </div>
-     </div>
-     <footer>
-         <p>&copy; {{ current_year }} Pentest Express. Todos los derechos reservados.</p>
-         <p>Este informe es confidencial y está destinado únicamente al destinatario.</p>
-     </footer>
- </body>
+    </div>
+</body>
 </html>
