@@ -146,18 +146,55 @@ async def debug_redis_jobs():
         
         for key in job_keys[:10]:  # Limitar a 10 para evitar sobrecarga
             try:
+                # Decodificar la clave correctamente
+                if isinstance(key, bytes):
+                    key_str = key.decode('utf-8')
+                else:
+                    key_str = str(key)
+                
+                job_id = key_str.replace('rq:job:', '')
+                
+                # Intentar obtener diferentes campos del hash
                 job_data_raw = rds.hget(key, "data")
+                job_status = rds.hget(key, "status")
+                job_created = rds.hget(key, "created_at")
+                
+                job_info = {"job_id": job_id}
+                
                 if job_data_raw:
-                    job_data = json.loads(job_data_raw)
-                    jobs_info.append({
-                        "job_id": key.decode('utf-8').replace('rq:job:', ''),
-                        "args": job_data.get('args', []),
-                        "created_at": job_data.get('created_at'),
-                        "status": job_data.get('status')
-                    })
+                    try:
+                        # Intentar decodificar como UTF-8, si falla usar latin-1
+                        if isinstance(job_data_raw, bytes):
+                            try:
+                                data_str = job_data_raw.decode('utf-8')
+                            except UnicodeDecodeError:
+                                data_str = job_data_raw.decode('latin-1')
+                        else:
+                            data_str = str(job_data_raw)
+                        
+                        job_data = json.loads(data_str)
+                        job_info["args"] = job_data.get('args', [])
+                        job_info["created_at"] = job_data.get('created_at')
+                    except Exception as decode_error:
+                        job_info["data_error"] = str(decode_error)
+                
+                if job_status:
+                    if isinstance(job_status, bytes):
+                        job_info["status"] = job_status.decode('utf-8', errors='replace')
+                    else:
+                        job_info["status"] = str(job_status)
+                
+                if job_created:
+                    if isinstance(job_created, bytes):
+                        job_info["created_at"] = job_created.decode('utf-8', errors='replace')
+                    else:
+                        job_info["created_at"] = str(job_created)
+                
+                jobs_info.append(job_info)
+                
             except Exception as e:
                 jobs_info.append({
-                    "job_id": key.decode('utf-8').replace('rq:job:', ''),
+                    "job_id": "unknown",
                     "error": str(e)
                 })
         
@@ -188,18 +225,37 @@ async def get_stripe_session(session_id: str):
                 
                 for key in job_keys:
                     try:
+                        # Decodificar la clave correctamente
+                        if isinstance(key, bytes):
+                            key_str = key.decode('utf-8')
+                        else:
+                            key_str = str(key)
+                        
                         # Obtener los datos del job
                         job_data_raw = rds.hget(key, "data")
                         if job_data_raw:
-                            job_data = json.loads(job_data_raw)
-                            args = job_data.get('args', [])
-                            
-                            # Verificar si el segundo argumento (email) coincide
-                            if len(args) >= 2 and args[1] == customer_email:
-                                # Extraer el job_id del nombre de la clave
-                                job_id = key.decode('utf-8').replace('rq:job:', '')
-                                print(f"Found matching job: {job_id} for email: {customer_email}")
-                                break
+                            try:
+                                # Intentar decodificar como UTF-8, si falla usar latin-1
+                                if isinstance(job_data_raw, bytes):
+                                    try:
+                                        data_str = job_data_raw.decode('utf-8')
+                                    except UnicodeDecodeError:
+                                        data_str = job_data_raw.decode('latin-1')
+                                else:
+                                    data_str = str(job_data_raw)
+                                
+                                job_data = json.loads(data_str)
+                                args = job_data.get('args', [])
+                                
+                                # Verificar si el segundo argumento (email) coincide
+                                if len(args) >= 2 and args[1] == customer_email:
+                                    # Extraer el job_id del nombre de la clave
+                                    job_id = key_str.replace('rq:job:', '')
+                                    print(f"Found matching job: {job_id} for email: {customer_email}")
+                                    break
+                            except Exception as decode_error:
+                                print(f"Error decoding job data for key {key_str}: {decode_error}")
+                                continue
                     except Exception as e:
                         print(f"Error processing job key {key}: {e}")
                         continue
