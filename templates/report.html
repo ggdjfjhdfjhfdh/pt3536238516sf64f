@@ -201,7 +201,7 @@
             <p>Fecha del Informe: {{ date }}</p>
         </header>
 
-        <div class="section">
+        <div class="section" id="resumen-ejecutivo">
             <h2>Resumen Ejecutivo</h2>
             <p>{{ executive_summary_text }}</p>
             
@@ -294,7 +294,7 @@
             </table>
         </div>
 
-        <div class="section">
+        <div class="section" id="metodologia">
             <h2>Metodología</h2>
             <p>El proceso de pentesting se llevó a cabo siguiendo una metodología integral que abarca diversas fases para asegurar una cobertura exhaustiva del dominio objetivo. A continuación, se detallan las principales etapas y las herramientas utilizadas:</p>
 
@@ -323,7 +323,7 @@
             </ul>
         </div>
 
-        <div class="section">
+        <div class="section" id="hallazgos-detallados">
             <h2>Hallazgos Detallados</h2>
 
             <h3>Mini-Heatmap MITRE ATT&CK</h3>
@@ -512,7 +512,7 @@
             {% endif %}
         </div>
 
-        <div class="section">
+        <div class="section" id="recomendaciones">
             <h2>Recomendaciones</h2>
             {% if recommendations %}
                 {% for rec in recommendations %}
@@ -527,7 +527,7 @@
             {% endif %}
         </div>
 
-        <div class="section disclaimer">
+        <div class="section disclaimer" id="descargo-de-responsabilidad">
             <h2>Descargo de Responsabilidad</h2>
             <p>Este informe de pentesting se genera automáticamente y se basa en las herramientas y metodologías descritas. Aunque se esfuerza por identificar la mayor cantidad posible de vulnerabilidades, no garantiza una cobertura del 100% de todas las posibles debilidades de seguridad. La seguridad es un proceso continuo y este informe representa una instantánea en el tiempo.</p>
             <p>El cliente entiende y acepta que el pentesting, por su naturaleza, implica la simulación de ataques y puede, en raras ocasiones, causar interrupciones menores o resultados inesperados, aunque se toman todas las precauciones para evitarlo. El proveedor de este servicio no se hace responsable de cualquier daño directo o indirecto, pérdida de datos o interrupción del servicio que pueda surgir del uso de este informe o de las actividades de escaneo.</p>
@@ -535,7 +535,7 @@
             <p>Este informe es confidencial y está destinado únicamente al destinatario. No debe ser distribuido ni divulgado sin el consentimiento expreso por escrito del proveedor.</p>
         </div>
 
-        <div class="section">
+        <div class="section" id="glosario-de-terminos">
             <h2>Glosario de Términos</h2>
             <dl>
                 <dt><strong>Pentesting (Prueba de Penetración):</strong></dt>
@@ -581,7 +581,7 @@
             </dl>
         </div>
 
-        <div class="section">
+        <div class="section" id="contacto-y-soporte">
              <h2>Contacto y Soporte</h2>
              <p>Si tiene alguna pregunta sobre este informe o necesita asistencia adicional con la seguridad de su sistema, no dude en ponerse en contacto con nuestro equipo de soporte:</p>
              <ul>
