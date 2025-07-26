@@ -3,7 +3,7 @@ import redis
 import json
 import asyncio
 import stripe
-from rq import Queue, Job
+from rq import Queue
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
