@@ -58,6 +58,29 @@ rds = redis.from_url(REDIS_URL)
 q = Queue('scan_queue', connection=rds)
 
 # ---------- Endpoints ----------
+@app.get("/")
+async def root():
+    """Endpoint raíz de la API."""
+    return {"message": "Pentest Express API", "status": "running", "version": "1.0.0"}
+
+@app.options("/consent-log")
+async def consent_log_options():
+    """Maneja las solicitudes OPTIONS para CORS preflight."""
+    return {"message": "OK"}
+
+@app.post("/consent-log")
+async def consent_log(request: Request):
+    """Endpoint para registrar consentimientos de cookies/privacidad."""
+    try:
+        data = await request.json()
+        # Aquí puedes procesar los datos de consentimiento
+        # Por ahora solo los registramos en logs
+        print(f"Consent log received: {data}")
+        return {"status": "success", "message": "Consent logged successfully"}
+    except Exception as e:
+        print(f"Error processing consent log: {e}")
+        raise HTTPException(status_code=400, detail="Invalid request data")
+
 @app.get("/scan/{job_id}/status")
 def scan_status(job_id: str):
     meta = rds.hget("rq:job:"+job_id, "meta")

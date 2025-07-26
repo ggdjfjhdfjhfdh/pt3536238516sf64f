@@ -14,7 +14,10 @@ sslyze
 
 httpx==0.27.0
 
+# Detección de tecnologías mejorada
 PyYAML==6.0.1
+requests[security]>=2.32.0
+urllib3>=2.0.0
 
 # Utilidades
 python-dotenv
@@ -25,3 +28,9 @@ python-dateutil==2.9.0
 reportlab==4.1.0
 typing-extensions>=4.0.0
 defusedxml
+
+# Nuevas dependencias para mejoras de detección
+# Nota: Wappalyzer CLI y WhatWeb deben instalarse por separado:
+# npm install -g wappalyzer
+# apt-get install whatweb (Linux) o brew install whatweb (macOS)
+# Para Windows, descargar desde repositorios oficiales
