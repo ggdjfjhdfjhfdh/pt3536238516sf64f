@@ -11,10 +11,37 @@ from starlette.responses import StreamingResponse
 
 app = FastAPI()
 
-# CORS – tu dominio de Vercel
+# CORS – dominios permitidos
+allowed_origins = [
+    "https://www.auditatetumismo.es",
+    "https://trae-pentest-express-landing-9olk.vercel.app",
+    "https://pentest-express-landing.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5500"
+]
+
+# Añadir dominios de variables de entorno si existen
+success_url = os.getenv("SUCCESS_URL")
+cancel_url = os.getenv("CANCEL_URL")
+if success_url:
+    from urllib.parse import urlparse
+    parsed = urlparse(success_url)
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    if origin not in allowed_origins:
+        allowed_origins.append(origin)
+if cancel_url:
+    from urllib.parse import urlparse
+    parsed = urlparse(cancel_url)
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    if origin not in allowed_origins:
+        allowed_origins.append(origin)
+
+print(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.auditatetumismo.es"],
+    allow_origins=allowed_origins,
     allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -119,44 +146,47 @@ async def get_stripe_session(session_id: str):
         customer_email = session.customer_details.email if session.customer_details else None
         job_id = None
         
-        if customer_email:
-            # Buscar trabajos en la cola que coincidan con el email
-            # Esto es una aproximación, en producción sería mejor tener un mapeo directo
-            jobs = q.get_jobs()
-            for job in jobs:
-                if hasattr(job, 'args') and len(job.args) >= 2 and job.args[1] == customer_email:
-                    job_id = job.id
-                    break
-            
-            # Si no se encuentra en trabajos activos, buscar en trabajos completados/fallidos
-            if not job_id:
-                from rq import get_current_job
-                from rq.registry import StartedJobRegistry, FinishedJobRegistry, FailedJobRegistry
-                
-                registries = [
-                    StartedJobRegistry(queue=q),
-                    FinishedJobRegistry(queue=q),
-                    FailedJobRegistry(queue=q)
-                ]
-                
-                for registry in registries:
-                    for job_id_candidate in registry.get_job_ids():
-                        try:
-                            job = q.connection.hget(f"rq:job:{job_id_candidate}", "data")
-                            if job:
-                                job_data = json.loads(job)
-                                if len(job_data.get('args', [])) >= 2 and job_data['args'][1] == customer_email:
-                                    job_id = job_id_candidate
-                                    break
-                        except:
-                            continue
-                    if job_id:
-                        break
+        print(f"Searching for jobs with email: {customer_email}")
         
-        return {
+        if customer_email:
+            # Buscar en todas las claves de Redis que contengan jobs
+            try:
+                # Buscar todas las claves de jobs en Redis
+                job_keys = rds.keys("rq:job:*")
+                print(f"Found {len(job_keys)} job keys in Redis")
+                
+                for key in job_keys:
+                    try:
+                        # Obtener los datos del job
+                        job_data_raw = rds.hget(key, "data")
+                        if job_data_raw:
+                            job_data = json.loads(job_data_raw)
+                            args = job_data.get('args', [])
+                            
+                            # Verificar si el segundo argumento (email) coincide
+                            if len(args) >= 2 and args[1] == customer_email:
+                                # Extraer el job_id del nombre de la clave
+                                job_id = key.decode('utf-8').replace('rq:job:', '')
+                                print(f"Found matching job: {job_id} for email: {customer_email}")
+                                break
+                    except Exception as e:
+                        print(f"Error processing job key {key}: {e}")
+                        continue
+                        
+                if not job_id:
+                    print(f"No job found for email: {customer_email}")
+                    
+            except Exception as e:
+                print(f"Error searching for jobs: {e}")
+        
+        result = {
             "status": session.status, 
             "customer_email": customer_email,
             "job_id": job_id
         }
+        print(f"Returning session data: {result}")
+        return result
+        
     except Exception as e:
+        print(f"Error in get_stripe_session: {e}")
         raise HTTPException(status_code=400, detail=str(e))
