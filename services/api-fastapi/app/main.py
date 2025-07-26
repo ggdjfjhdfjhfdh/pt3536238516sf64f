@@ -3,7 +3,7 @@ import redis
 import json
 import asyncio
 import stripe
-from rq import Queue
+from rq import Queue, Job
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -126,13 +126,19 @@ async def stripe_webhook(req: Request):
 
     if event["type"] == "checkout.session.completed":
         data    = event["data"]["object"]
+        session_id = data["id"]
         dominio = data["custom_fields"][0]["text"]["value"]
 
         email   = data["customer_details"]["email"]
 
-        # ► Encolar trabajo RQ
-        q.enqueue('pentest.core._run_scan_job', dominio, email)
-        print(f"Published scan for {dominio} → {email}")
+        # ► Encolar trabajo RQ y capturar job_id
+        job = q.enqueue('pentest.core._run_scan_job', dominio, email)
+        job_id = job.id
+        
+        # ► Guardar la asociación session_id -> job_id en Redis
+        rds.set(f"stripe_session:{session_id}", job_id, ex=86400)  # Expira en 24 horas
+        
+        print(f"Published scan for {dominio} → {email}, job_id: {job_id}, session_id: {session_id}")
 
     return {"ok": True}
 
@@ -210,13 +216,24 @@ async def get_stripe_session(session_id: str):
     try:
         session = stripe.checkout.Session.retrieve(session_id)
         
-        # Buscar el job_id asociado con el email del cliente
+        # Buscar el job_id asociado con el session_id primero
         customer_email = session.customer_details.email if session.customer_details else None
         job_id = None
         
-        print(f"Searching for jobs with email: {customer_email}")
+        print(f"Searching for job_id with session_id: {session_id}")
         
-        if customer_email:
+        # Primero intentar obtener job_id directamente del session_id
+        try:
+            job_id_bytes = rds.get(f"stripe_session:{session_id}")
+            if job_id_bytes:
+                job_id = job_id_bytes.decode('utf-8') if isinstance(job_id_bytes, bytes) else str(job_id_bytes)
+                print(f"Found job_id from session mapping: {job_id}")
+        except Exception as e:
+            print(f"Error getting job_id from session mapping: {e}")
+        
+        # Si no se encuentra por session_id, buscar por email (fallback)
+        if not job_id and customer_email:
+            print(f"Fallback: Searching for jobs with email: {customer_email}")
             # Buscar en todas las claves de Redis que contengan jobs
             try:
                 # Buscar todas las claves de jobs en Redis
