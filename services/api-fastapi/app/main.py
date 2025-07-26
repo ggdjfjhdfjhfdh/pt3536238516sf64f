@@ -137,6 +137,37 @@ async def stripe_webhook(req: Request):
     return {"ok": True}
 
 
+@app.get("/debug/redis-jobs")
+async def debug_redis_jobs():
+    """Endpoint de debug para ver todos los trabajos en Redis."""
+    try:
+        job_keys = rds.keys("rq:job:*")
+        jobs_info = []
+        
+        for key in job_keys[:10]:  # Limitar a 10 para evitar sobrecarga
+            try:
+                job_data_raw = rds.hget(key, "data")
+                if job_data_raw:
+                    job_data = json.loads(job_data_raw)
+                    jobs_info.append({
+                        "job_id": key.decode('utf-8').replace('rq:job:', ''),
+                        "args": job_data.get('args', []),
+                        "created_at": job_data.get('created_at'),
+                        "status": job_data.get('status')
+                    })
+            except Exception as e:
+                jobs_info.append({
+                    "job_id": key.decode('utf-8').replace('rq:job:', ''),
+                    "error": str(e)
+                })
+        
+        return {
+            "total_jobs": len(job_keys),
+            "jobs_sample": jobs_info
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/stripe/session/{session_id}")
 async def get_stripe_session(session_id: str):
     try:
