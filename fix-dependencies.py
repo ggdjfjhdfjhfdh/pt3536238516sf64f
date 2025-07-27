@@ -7,12 +7,16 @@ Este script verifica y resuelve conflictos comunes entre paquetes.
 
 import subprocess
 import sys
-import pkg_resources
+try:
+    from importlib.metadata import distributions
+except ImportError:
+    # Fallback para Python < 3.8
+    from importlib_metadata import distributions
 from packaging import version
 
 def check_and_fix_dependencies():
     """Verifica y resuelve conflictos de dependencias."""
-    print("🔧 Verificando dependencias...")
+    print("[INFO] Verificando dependencias...")
     
     # Conflictos conocidos y sus resoluciones
     known_conflicts = {
@@ -29,10 +33,10 @@ def check_and_fix_dependencies():
     
     try:
         # Verificar paquetes instalados
-        installed_packages = {pkg.project_name.lower(): pkg.version 
-                            for pkg in pkg_resources.working_set}
+        installed_packages = {dist.metadata['name'].lower(): dist.version 
+                            for dist in distributions()}
         
-        print(f"📦 Paquetes instalados: {len(installed_packages)}")
+        print(f"[INFO] Paquetes instalados: {len(installed_packages)}")
         
         # Verificar conflictos específicos
         conflicts_found = []
@@ -40,43 +44,43 @@ def check_and_fix_dependencies():
         for package, required_version in known_conflicts.items():
             if package.lower() in installed_packages:
                 current_version = installed_packages[package.lower()]
-                print(f"✓ {package}: {current_version}")
+                print(f"[OK] {package}: {current_version}")
             else:
-                print(f"⚠️  {package}: No instalado")
+                print(f"[WARN] {package}: No instalado")
                 conflicts_found.append(package)
         
         # Verificar conflictos de versiones
-        print("\n🔍 Verificando conflictos de versiones...")
+        print("\n[INFO] Verificando conflictos de versiones...")
         try:
             result = subprocess.run([
                 sys.executable, '-m', 'pip', 'check'
             ], capture_output=True, text=True)
             
             if result.returncode != 0:
-                print(f"⚠️  Conflictos detectados:\n{result.stdout}")
+                print(f"[WARN] Conflictos detectados:\n{result.stdout}")
             else:
-                print("✅ No se detectaron conflictos")
+                print("[OK] No se detectaron conflictos")
         except Exception as e:
-            print(f"❌ Error verificando conflictos: {e}")
+            print(f"[ERROR] Error verificando conflictos: {e}")
         
         # Resolver conflictos si es necesario
         if conflicts_found:
-            print(f"\n🔄 Resolviendo {len(conflicts_found)} conflictos...")
+            print(f"\n[INFO] Resolviendo {len(conflicts_found)} conflictos...")
             for package in conflicts_found:
                 try:
                     cmd = [sys.executable, '-m', 'pip', 'install', f'{package}{known_conflicts[package]}']
-                    print(f"📦 Instalando: {package}{known_conflicts[package]}")
+                    print(f"[INFO] Instalando: {package}{known_conflicts[package]}")
                     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-                    print(f"✓ Resuelto: {package}")
+                    print(f"[OK] Resuelto: {package}")
                 except subprocess.CalledProcessError as e:
-                    print(f"❌ Error resolviendo {package}: {e}")
+                    print(f"[ERROR] Error resolviendo {package}: {e}")
                     print(f"   stdout: {e.stdout}")
                     print(f"   stderr: {e.stderr}")
         
-        print("✅ Verificación de dependencias completada")
+        print("[OK] Verificación de dependencias completada")
         
     except Exception as e:
-        print(f"❌ Error durante la verificación: {e}")
+        print(f"[ERROR] Error durante la verificación: {e}")
         return False
     
     return True
@@ -86,13 +90,13 @@ def upgrade_pip():
     try:
         subprocess.run([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'], 
                       check=True, capture_output=True)
-        print("✅ pip actualizado")
+        print("[OK] pip actualizado")
     except subprocess.CalledProcessError:
-        print("⚠️  No se pudo actualizar pip")
+        print("[WARN] No se pudo actualizar pip")
 
 def main():
     """Función principal."""
-    print("🚀 Iniciando resolución de dependencias...")
+    print("[START] Iniciando resolución de dependencias...")
     
     # Actualizar pip primero
     upgrade_pip()
@@ -101,10 +105,10 @@ def main():
     success = check_and_fix_dependencies()
     
     if success:
-        print("🎉 Resolución de dependencias exitosa")
+        print("[SUCCESS] Resolución de dependencias exitosa")
         sys.exit(0)
     else:
-        print("💥 Falló la resolución de dependencias")
+        print("[FAILED] Falló la resolución de dependencias")
         sys.exit(1)
 
 if __name__ == '__main__':

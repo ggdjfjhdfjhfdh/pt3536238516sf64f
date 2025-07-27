@@ -28,6 +28,8 @@ python-dateutil==2.9.0
 reportlab==4.1.0
 typing-extensions>=4.0.0
 defusedxml
+importlib-metadata>=4.0.0; python_version<'3.8'
+packaging>=21.0
 
 # Dependencias para IA/ML Predictivo
 scikit-learn==1.4.0
