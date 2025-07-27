@@ -1,5 +1,6 @@
-fastapi
-uvicorn[standard]
-stripe
-redis          # ← nuevo
-rq
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.32.0,<1.0.0
+stripe>=10.0.0,<11.0.0
+redis>=5.0.0,<6.0.0
+rq>=1.15.0,<2.0.0
+anyio>=3.7.1,<5.0.0
