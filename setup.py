@@ -6,7 +6,13 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        'pentest': ['mitre_mapping.yaml', 'templates/*.html'],
+        'pentest': [
+            'mitre_mapping.yaml',
+            'tech_mappings.yaml', 
+            'templates/*.html',
+            'wordlists/*',
+            'config/*'
+        ],
     },
     install_requires=[
         "redis",
