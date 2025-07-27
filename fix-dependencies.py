@@ -21,7 +21,10 @@ def check_and_fix_dependencies():
         'requests': '>=2.32.0',
         'urllib3': '>=2.0.0',
         'pydantic': '>=2.0.0',
-        'fastapi': '>=0.100.0'
+        'fastapi': '>=0.115.0,<1.0.0',
+        'uvicorn': '>=0.32.0,<1.0.0',
+        'redis': '>=5.0.0,<6.0.0',
+        'rq': '>=1.15.0,<2.0.0'
     }
     
     try:
@@ -42,18 +45,33 @@ def check_and_fix_dependencies():
                 print(f"⚠️  {package}: No instalado")
                 conflicts_found.append(package)
         
+        # Verificar conflictos de versiones
+        print("\n🔍 Verificando conflictos de versiones...")
+        try:
+            result = subprocess.run([
+                sys.executable, '-m', 'pip', 'check'
+            ], capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                print(f"⚠️  Conflictos detectados:\n{result.stdout}")
+            else:
+                print("✅ No se detectaron conflictos")
+        except Exception as e:
+            print(f"❌ Error verificando conflictos: {e}")
+        
         # Resolver conflictos si es necesario
         if conflicts_found:
-            print(f"🔄 Resolviendo {len(conflicts_found)} conflictos...")
+            print(f"\n🔄 Resolviendo {len(conflicts_found)} conflictos...")
             for package in conflicts_found:
                 try:
-                    subprocess.run([
-                        sys.executable, '-m', 'pip', 'install', 
-                        f'{package}{known_conflicts[package]}'
-                    ], check=True, capture_output=True)
+                    cmd = [sys.executable, '-m', 'pip', 'install', f'{package}{known_conflicts[package]}']
+                    print(f"📦 Instalando: {package}{known_conflicts[package]}")
+                    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
                     print(f"✓ Resuelto: {package}")
                 except subprocess.CalledProcessError as e:
                     print(f"❌ Error resolviendo {package}: {e}")
+                    print(f"   stdout: {e.stdout}")
+                    print(f"   stderr: {e.stderr}")
         
         print("✅ Verificación de dependencias completada")
         
