@@ -51,13 +51,14 @@ WORKDIR /app
 # Configurar PYTHONPATH para que Python pueda encontrar el paquete pentest
 ENV PYTHONPATH=/app:$PYTHONPATH
 
+# Copiar archivos de configuración y dependencias primero
+COPY requirements.txt .
+COPY setup.py .
+COPY fix-dependencies.py .
+
 # Copiar el código fuente
 COPY pentest pentest
-COPY templates pentest/templates
-COPY . .
-
-# Copiar script de resolución de dependencias
-COPY fix-dependencies.py .
+COPY services services
 
 # Instalar todas las dependencias de Python con resolución de conflictos
 RUN pip install --upgrade pip && \
