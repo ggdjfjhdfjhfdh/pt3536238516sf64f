@@ -22,6 +22,7 @@
 !setup.py
 !pentest/
 !templates/
+!fix-dependencies.py
 
 # Ignorar archivos específicos
 **/__pycache__/
