@@ -22,7 +22,12 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r services/api-fastapi/requirements.txt && \
     python fix-dependencies.py
 
+# Copiar archivos del proyecto
 COPY services/api-fastapi/app services/api-fastapi/app
 COPY . .
+
+# Instalar el paquete pentest para asegurar que las plantillas estén disponibles
+RUN pip install -e .
+
 ENV PYTHONPATH=/app
 CMD ["uvicorn", "services.api-fastapi.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

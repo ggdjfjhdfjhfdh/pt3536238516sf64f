@@ -20,7 +20,9 @@
 !requirements.txt
 !Dockerfile.scan-runner
 !setup.py
+!MANIFEST.in
 !pentest/
+!pentest/**
 !templates/
 !fix-dependencies.py
 
