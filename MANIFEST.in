@@ -1,0 +1,4 @@
+include pentest/mitre_mapping.yaml
+recursive-include pentest/templates *.html
+recursive-include pentest/wordlists *
+recursive-include pentest/config *
