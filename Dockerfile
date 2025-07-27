@@ -1,6 +1,16 @@
 FROM python:3.12-slim
 WORKDIR /app
 
+# Instalar herramientas de compilación necesarias para nassl/sslyze
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 COPY services/api-fastapi/requirements.txt services/api-fastapi/
 COPY fix-dependencies.py .
