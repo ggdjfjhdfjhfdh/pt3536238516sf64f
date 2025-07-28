@@ -155,7 +155,13 @@ async def stripe_webhook(req: Request):
         email   = data["customer_details"]["email"]
 
         # ► Encolar trabajo RQ y capturar job_id
-        job = q.enqueue('pentest.core._run_scan_job', dominio, email)
+        job = q.enqueue(
+            'pentest.core._run_scan_job', 
+            dominio, 
+            email,
+            job_timeout=2 * 60 * 60,  # 2 horas (aumentado para manejar redirecciones)
+            result_ttl=24 * 60 * 60   # 24 horas
+        )
         job_id = job.id
         
         # ► Guardar la asociación session_id -> job_id en Redis
