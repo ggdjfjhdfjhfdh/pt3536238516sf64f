@@ -71,7 +71,11 @@ RUN pip install --upgrade pip setuptools && \
 
 
 # Crear directorios necesarios
-RUN mkdir -p /app/templates /tmp/scan_results
+RUN mkdir -p /app/templates /app/pentest/templates /tmp/scan_results
+
+# Copiar plantillas HTML
+COPY templates/ /app/templates/
+COPY templates/report.html /app/pentest/templates/report.html
 
 # Comando para ejecutar el worker
 CMD ["pentest-worker"]
