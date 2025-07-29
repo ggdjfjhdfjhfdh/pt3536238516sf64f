@@ -45,9 +45,12 @@ ENV/
 
 # Archivos generados
 *.pdf
-*.html
+# *.html  # Comentado para permitir plantillas HTML
 *.json
 *.csv
+
+# Permitir plantillas HTML específicas
+!pentest/templates/*.html
 
 # Directorios específicos del proyecto
 reports/
