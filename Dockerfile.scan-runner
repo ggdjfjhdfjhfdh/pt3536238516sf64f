@@ -71,11 +71,10 @@ RUN pip install --upgrade pip setuptools && \
 
 
 # Crear directorios necesarios
-RUN mkdir -p /app/templates /app/pentest/templates /tmp/scan_results
+RUN mkdir -p /tmp/scan_results
 
-# Copiar plantillas HTML
-COPY templates/ /app/templates/
-COPY templates/report_enhanced.html /app/pentest/templates/report_enhanced.html
+# Las plantillas ya están en pentest/templates/ como parte del código fuente
+# No necesitamos copiar desde templates/ porque está vacío
 
 # Comando para ejecutar el worker
 CMD ["pentest-worker"]

@@ -26,11 +26,8 @@ RUN pip install --upgrade pip && \
 COPY services/api-fastapi/app services/api-fastapi/app
 COPY . .
 
-# Copiar plantillas a la ubicación esperada por Docker
-COPY templates/ /app/templates/
-# Crear directorio pentest/templates y copiar desde templates principal
-RUN mkdir -p /app/pentest/templates
-COPY templates/report_enhanced.html /app/pentest/templates/report_enhanced.html
+# Las plantillas ya están en pentest/templates/ como parte del código fuente
+# No necesitamos copiar desde templates/ porque está vacío
 
 # Instalar el paquete pentest para asegurar que las plantillas estén disponibles
 RUN pip install -e .
