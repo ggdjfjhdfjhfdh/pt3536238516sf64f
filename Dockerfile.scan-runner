@@ -75,7 +75,6 @@ RUN mkdir -p /app/templates /app/pentest/templates /tmp/scan_results
 
 # Copiar plantillas HTML
 COPY templates/ /app/templates/
-COPY templates/report.html /app/pentest/templates/report.html
 COPY templates/report_enhanced.html /app/pentest/templates/report_enhanced.html
 
 # Comando para ejecutar el worker

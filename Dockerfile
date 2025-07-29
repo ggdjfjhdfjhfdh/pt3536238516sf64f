@@ -30,7 +30,6 @@ COPY . .
 COPY templates/ /app/templates/
 # Crear directorio pentest/templates y copiar desde templates principal
 RUN mkdir -p /app/pentest/templates
-COPY templates/report.html /app/pentest/templates/report.html
 COPY templates/report_enhanced.html /app/pentest/templates/report_enhanced.html
 
 # Instalar el paquete pentest para asegurar que las plantillas estén disponibles
